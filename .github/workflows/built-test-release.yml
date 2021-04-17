@@ -272,10 +272,9 @@ jobs:
 
       - name: Publish to PyPI
         env:
-          PYPI_USERNAME: "${{ secrets.PYPI_USERNAME }}"
           PYPI_TOKEN: "${{ secrets.PYPI_TOKEN }}"
         run: |
           docker run \
             -v "$(pwd):/app" \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
-            poetry publish --username "$PYPI_USERNAME" --password "$PYPI_TOKEN"
+            poetry publish --username __token__ --password "$PYPI_TOKEN"
