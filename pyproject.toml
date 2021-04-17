@@ -1,13 +1,17 @@
 [tool.poetry]
 authors = ["Wiktor Bachnik <wiktor.bachnik@dynatrace.com>", "Vagiz Duseev <vagiz.duseev@dynatrace.com>"]
 description = "Dynatrace CLI"
+documentation = "https://dt-cli.readthedocs.io"
 homepage = "https://github.com/dynatrace-oss/dt-cli"
-license = "MIT"
+keywords = ["dynatrace", "cli", "extensions"]
+license = "Apache-2.0"
+maintainers = ["Wiktor Bachnik <wiktor.bachnik@dynatrace.com>", "Vagiz Duseev <vagiz.duseev@dynatrace.com>"]
 name = "dt-cli"
 packages = [
   {include = "dtcli"},
 ]
 readme = "README.md"
+repository = "https://github.com/dynatrace-oss/dt-cli"
 version = "0.0.6-alpha"
 
 [tool.poetry.dependencies]

@@ -5,7 +5,7 @@ and building extensions for Dynatrace Extension Framework 2.0.
 
 <p>
   <a href="https://pypi.org/project/dt-cli/"><img alt="PyPI" src="https://img.shields.io/pypi/v/dt-cli?color=blue"></a>
-  <a href=""><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/dynatrace-oss/dt-cli/build-test-release?label=Build&logo=github"></a>
+  <a href="https://github.com/dynatrace-oss/dt-cli/actions/workflows/built-test-release.yml"><img alt="GitHub Workflow Status (branch)" src="https://img.shields.io/github/workflow/status/dynatrace-oss/dt-cli/build-test-release/main"></a>
 </p>
 
 
@@ -74,7 +74,7 @@ Extension subcommand has two aliases for convenience: `dt ext` or `dt extensions
   ```shell
   Usage: dt extension build [OPTIONS]
 
-    builds extension file from the given extension directory (`extension' in
+    builds extension file from the given extension directory (extension in
     current dir. is the default)
 
     Options:
@@ -170,7 +170,7 @@ Run test coverage report
 poetry run pytest --cov . --cov-report html
 ```
 
-## Using `dt-cli` from your Python code
+## Using dt-cli from your Python code
 
 You may want to use some commands implemented by `dt-cli` directly in your Python code, e.g. to automatically sign your extension in a CI environment.
 Here's an example of building an extension programatically, it assumes `dtcli` package is already installed and available in your working environment.
@@ -193,8 +193,11 @@ building.build_extension(
 
 ## Contributions
 
-You are welcome to contribute using Pull Requests to the respective repositories. Before contributing, please read our [Code of Conduct](CODE_OF_CONDUCT.md).
+You are welcome to contribute using Pull Requests to the respective
+repository. Before contributing, please read our
+[Code of Conduct](https://github.com/dynatrace-oss/dt-cli/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
-`dt-cli` is an Open Source Project. Please see [LICENSE](LICENSE) for more information.
+`dt-cli` is an Open Source Project. Please see
+[LICENSE](https://github.com/dynatrace-oss/dt-cli/blob/main/LICENSE) for more information.
