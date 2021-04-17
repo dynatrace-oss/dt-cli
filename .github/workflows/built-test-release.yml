@@ -49,7 +49,7 @@ jobs:
     # Only happens when PR is merged into main or when something is pushed
     # into main branch.
     #
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
@@ -63,15 +63,21 @@ jobs:
         run: |
           docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6}
 
-      - name: Tag image with release tag
+      - name: Tag and push image with "latest" tag
+        if: github.ref == 'refs/heads/main'
         run: |
           docker tag \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
-
-      - name: Push release tag to GitHub registry
-        run: |
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
+
+      - name: Tag and push image with git tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker tag \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
+          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
 
   run-tests:
     name: Run tests
@@ -201,20 +207,32 @@ jobs:
       - build-package
       - build-linux-binary
     steps:
+      - uses: actions/checkout@v2
+
       - name: Download cached build artifacts
         uses: actions/download-artifact@v2
+        with:
+          path: artifacts
 
-      - name: Show all artifacts
+      - name: Generate changelog
         run: |
-          ls -R
+          cat > CHANGELOG.md <<EOT
+          # CHANGELOG
+
+          Release: dt-cli (${GITHUB_SHA:0:6})
+
+          ## Changes
+
+          EOT
+          git log --format=format:"%s" >> CHANGELOG.md
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*
+            artifacts/package/*
+            artifacts/linux-binary/*
             LICENSE
-          body: |
-            Test release.
+          body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
