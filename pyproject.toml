@@ -8,7 +8,7 @@ packages = [
   {include = "dtcli"},
 ]
 readme = "README.md"
-version = "0.0.2-alpha"
+version = "0.0.3-alpha"
 
 [tool.poetry.dependencies]
 PyYAML = "^5.4.1"
