@@ -4,8 +4,13 @@ on:
   pull_request:
     branches:
       - main
-  # Push works for pushes into every branch of the repo
   push:
+    # Push only works for tags in the main branch.
+    # Will be executed on push or successful merge into main.
+    tags:
+      - "v*"
+    branches:
+      - main
 
 jobs:
   build-dev-docker-image:
@@ -69,6 +74,7 @@ jobs:
           docker tag \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
+
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
 
       - name: Tag and push image with git tag
@@ -77,6 +83,7 @@ jobs:
           docker tag \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
+
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
 
   run-tests:
@@ -217,11 +224,11 @@ jobs:
       - name: Generate changelog
         run: |
           cat > CHANGELOG.md <<EOT
-          # CHANGELOG
+          ## CHANGELOG
 
-          Release: dt-cli (${GITHUB_SHA:0:6})
+          **Release**: dt-cli (${GITHUB_REF#refs/tags/})
 
-          ## Changes
+          ### Changes
 
           EOT
           git log --format=format:"%s" >> CHANGELOG.md
@@ -236,3 +243,36 @@ jobs:
           body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    #
+    # Publishes built package to PyPI
+    #
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Authenticate in GitHub docker registry
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+
+      - name: Pull latest cached docker image
+        run: |
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6}
+
+      - name: Download cached built package
+        uses: actions/download-artifact@v2
+        with:
+          name: package
+
+      - name: Publish to PyPI
+        env:
+          PYPI_USERNAME: "${{ secrets.PYPI_USERNAME }}"
+          PYPI_TOKEN: "${{ secrets.PYPI_TOKEN }}"
+        run: |
+          docker run \
+            -v "$(pwd):/app" \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            poetry publish --username "$PYPI_USERNAME" --password "$PYPI_TOKEN"
