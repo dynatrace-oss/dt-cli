@@ -9,8 +9,7 @@ on:
     # Will be executed on push or successful merge into main.
     tags:
       - "v*"
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build-dev-docker-image:
