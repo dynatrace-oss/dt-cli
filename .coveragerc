@@ -1,0 +1,23 @@
+[run]
+branch = True
+
+source =
+    dtcli
+
+omit =
+    # Omit test files
+    dtcli/tests/*
+    dtcli/console/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+
+fail_under = 0

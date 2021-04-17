@@ -1,0 +1,29 @@
+# IDE
+.vscode/
+
+# Virtual environment
+env/
+venv/
+.venv/
+
+# Builds
+dist/
+build/
+__pycache__
+*.spec
+
+# Tests
+.pytest_cache
+.mypy_cache
+htmlcov/
+.coverage
+
+# Integration tests
+extension/
+*.zip
+*.sig
+*.key
+*.crt
+
+# Git
+.gitconfig
