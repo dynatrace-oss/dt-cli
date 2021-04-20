@@ -19,7 +19,7 @@ PyYAML = "^5.3.1"
 asn1crypto = "^1.4.0"
 click = "^7.1.2"
 click-aliases = "^1.0.1"
-cryptography = "^3.4.7"
+cryptography = "^3.1.0"
 python = "^3.8"
 
 [tool.poetry.dev-dependencies]
