@@ -993,7 +993,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "63352c7676777cfacfad4471de8d2c11fd2c0b43fb9f3beb46cc681b6761f2f8"
+content-hash = "76d93dbfa1c93148f26f0ae8bc6290f34e381800554f0c74623286ad746b0910"
 
 [metadata.files]
 alabaster = [
@@ -1390,7 +1390,6 @@ pygments = [
     {file = "Pygments-2.8.1.tar.gz", hash = "sha256:2656e1a6edcdabf4275f9a3640db59fd5de107d88e8663c5d4e9a0fa62f77f94"},
 ]
 pyinstaller = [
-    {file = "pyinstaller-4.3-py3-none-any.whl", hash = "sha256:2d28fd7c45ec24bd02892c7cf84ae67103bb6200863a64d4a17521e191649d76"},
     {file = "pyinstaller-4.3.tar.gz", hash = "sha256:5ecf8bbc230d7298a796e52bb745b95eee12878d141f1645612c99246ecd23f2"},
 ]
 pyinstaller-hooks-contrib = [
