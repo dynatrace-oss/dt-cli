@@ -170,5 +170,32 @@ def build(**kwargs):
     )
 
 
+@extension_dev.command(
+    help="comand packs python package as a datasource. It uses pip to download all dependencies and create whl files"
+)
+@click.argument(
+    "path-to-setup-py",
+)
+@click.option(
+    "--additional-libraries-dir",
+    default=None,
+    help="Path to folder containing additional directories"
+)
+@click.option(
+    "--extension-directory",
+    default=DEFAULT_EXTENSION_DIR,
+    help="Directory where extension files are. Default: "
+    + DEFAULT_EXTENSION_DIR,
+)
+def prepare_python(path_to_setup_py, **kwargs):
+    additional_libraries_dir = kwargs.get("additional_libraries_dir", None)
+    extension_directory = kwargs["extension_directory"]
+
+    return dtcli.dev.pack_python_extension(
+        setup_path=path_to_setup_py,
+        target_path=extension_directory,
+        additional_path=additional_libraries_dir)
+
+
 if __name__ == "__main__":
     main()
