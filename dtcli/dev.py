@@ -18,7 +18,7 @@ def pack_python_extension(setup_path, target_path, additional_path):
             print("Error building python extension: {}".format(result.stderr.decode('utf-8')), file=sys.stderr)
             return result.returncode
 
-        lib_folder = os.path.join(target_path, '/lib')
+        lib_folder = os.path.join(target_path, 'lib')
         if not os.path.exists(lib_folder):
             os.makedirs(lib_folder)
         if not os.path.isdir(lib_folder):
