@@ -21,6 +21,7 @@ click = "^7.1.2"
 click-aliases = "^1.0.1"
 cryptography = "^3.4.7"
 python = "^3.8"
+wheel = "^0.36.2"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^3.5.4"
