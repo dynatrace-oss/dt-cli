@@ -21,6 +21,7 @@ from dtcli.utils import *
 from dtcli import building
 from dtcli import signing
 from dtcli import __version__
+from dtcli import dev
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -33,6 +34,11 @@ def main():
 
 @main.group(aliases=["extensions", "ext"])
 def extension():
+    pass
+
+
+@main.group(aliases=["extensions_dev", "ext_dev"])
+def extension_dev():
     pass
 
 
@@ -191,7 +197,7 @@ def prepare_python(path_to_setup_py, **kwargs):
     additional_libraries_dir = kwargs.get("additional_libraries_dir", None)
     extension_directory = kwargs["extension_directory"]
 
-    return dtcli.dev.pack_python_extension(
+    return dev.pack_python_extension(
         setup_path=path_to_setup_py,
         target_path=extension_directory,
         additional_path=additional_libraries_dir)
