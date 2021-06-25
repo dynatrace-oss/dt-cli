@@ -72,6 +72,10 @@ def _package(
         metadata["name"],
         metadata["version"],
     )
+
+    utils.require_extension_name_valid(extension_file_name)
+    extension_file_name = extension_file_name.replace(":", "_")
+
     extension_file_path = os.path.join(target_dir_path, extension_file_name)
     utils.check_file_exists(extension_file_path)
     try:
