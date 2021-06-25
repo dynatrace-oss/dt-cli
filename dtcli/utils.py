@@ -24,7 +24,7 @@ class KeyGenerationError(Exception):
     pass
 
 def require_extension_name_valid(extension_name):
-    extension_name_regex = re.compile("^custom:(?!.*(?:\.)$)[0-9a-z-_][0-9a-z-_\.]*$")
+    extension_name_regex = re.compile("^custom:(?!\\.)(?!.*\\.\\.)(?!.*\\.$)[a-z0-9-_\\.]+$")
     if not extension_name_regex.match(extension_name):
         print("%s doesn't satisfy extension naming format, aborting!" % extension_name)
         raise ExtensionBuildError()

@@ -30,6 +30,8 @@ def test_require_extension_name_valid_negative():
     with pytest.raises(utils.ExtensionBuildError):
         utils.require_extension_name_valid("custom:.some.test.ext.")
     with pytest.raises(utils.ExtensionBuildError):
+        utils.require_extension_name_valid("custom:some.test..ext")
+    with pytest.raises(utils.ExtensionBuildError):
         utils.require_extension_name_valid("custom:som:e.t/est.e$xt")
     with pytest.raises(utils.ExtensionBuildError):
         utils.require_extension_name_valid("custom:SOME.test.ext")
