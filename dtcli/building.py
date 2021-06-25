@@ -26,6 +26,13 @@ from . import __version__
 
 from .constants import EXTENSION_YAML, EXTENSION_ZIP, EXTENSION_ZIP_SIG
 
+def _generate_build_comment():
+    build_data = {
+        "Generator": f"dt-cli {__version__}",
+        "Creation-time": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+    }
+
+    return '\n'.join(': '.join(pair) for pair in build_data.items())
 
 def _zip_extension(extension_dir_path, extension_zip_path):
 
@@ -35,12 +42,8 @@ def _zip_extension(extension_dir_path, extension_zip_path):
     utils.check_file_exists(extension_zip_path)
     print("Building %s from %s" % (extension_zip_path, extension_dir_path))
 
-    build_time = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S%Z")
-    build_comment = f"Built by dt-cli ({__version__}) at {build_time}."
-
     try:
         with zipfile.ZipFile(extension_zip_path, "w") as zf:
-            zf.comment = bytes(build_comment, "utf-8")
 
             for file_path in glob.glob(
                 os.path.join(extension_dir_path, "**"), recursive=True
@@ -76,6 +79,7 @@ def _package(
     utils.check_file_exists(extension_file_path)
     try:
         with zipfile.ZipFile(extension_file_path, "w") as zf:
+            zf.comment = bytes(_generate_build_comment(), "utf-8")
             zf.write(extension_zip_path, arcname=EXTENSION_ZIP)
             zf.write(extension_zip_sig_path, arcname=EXTENSION_ZIP_SIG)
     except Exception as e:
