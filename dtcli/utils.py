@@ -29,14 +29,15 @@ def require_extension_name_valid(extension_name):
         print("%s doesn't satisfy extension naming format, aborting!" % extension_name)
         raise ExtensionBuildError()
 
-def check_file_exists(file_path, exception_cls=ExtensionBuildError):
+def check_file_exists(file_path, exception_cls=ExtensionBuildError, warn_overwrite=True):
     """Returns True and prints a message if file under given path exists and is a real file.
     In case the path represents a directory, exception given in the exception_cls parameter will be thrown.
     In case there's no file under the given path returns False.
     """
     if os.path.exists(file_path):
         require_is_not_dir(file_path, exception_cls)
-        print("%s file already exists, it will be overwritten!" % file_path)
+        if warn_overwrite:
+            print("%s file already exists, it will be overwritten!" % file_path)
         return True
     return False
 

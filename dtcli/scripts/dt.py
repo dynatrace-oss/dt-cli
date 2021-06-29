@@ -55,16 +55,46 @@ def extension_dev():
     default=DEFAULT_CA_KEY,
     help="CA key. Default: " + DEFAULT_CA_KEY,
 )
+@click.option(
+    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
+)
+@click.option(
+    "-CN", "--common-name", default="Default Extension CA", help="sets common name (CN)"
+)
+@click.option(
+    "-O", "--organization-name", default="Some Company", help="sets organization name (O)"
+)
+@click.option(
+    "-OU", "--organizational-unit-name", default="Extension CA", help="sets organizational unit name (OU)"
+)
+@click.option(
+    "-L", "--locality-name", help="sets locality name (L)"
+)
+@click.option(
+    "-S", "--state-or-province-name", help="sets state or province name (S)"
+)
+@click.option(
+    "-C", "--country-name", help="sets country name (C)"
+)
 def genca(**kwargs):
     ca_cert_file_path = kwargs["ca_cert"]
-    require_is_not_dir(ca_cert_file_path)
-    check_file_exists(ca_cert_file_path, KeyGenerationError)
-
     ca_key_file_path = kwargs["ca_key"]
-    require_is_not_dir(ca_key_file_path)
-    check_file_exists(ca_key_file_path, KeyGenerationError)
+    force = kwargs["force"]
+    if force:
+        print("Forced generation option used. Already existing CA certificate files will be overwritten.")
+        check_file_exists(ca_cert_file_path, KeyGenerationError)
+        check_file_exists(ca_key_file_path, KeyGenerationError)
+        signing.generate_ca(ca_cert_file_path, ca_key_file_path, kwargs)
+        return
 
-    signing.generate_ca(ca_cert_file_path, ca_key_file_path)
+    if (
+        check_file_exists(ca_cert_file_path, KeyGenerationError, warn_overwrite=False) and
+        check_file_exists(ca_key_file_path, KeyGenerationError, warn_overwrite=False)
+    ):
+        print("CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway.")
+        return
+
+    signing.generate_ca(ca_cert_file_path, ca_key_file_path, kwargs)
 
 
 @extension.command(
@@ -90,6 +120,24 @@ def genca(**kwargs):
     default=DEFAULT_DEV_KEY,
     help="Developer key. Default: " + DEFAULT_DEV_KEY,
 )
+@click.option(
+    "-CN", "--common-name", default="Some Developer", help="sets common name (CN)"
+)
+@click.option(
+    "-O", "--organization-name", default="Some Company", help="sets organization name (O)"
+)
+@click.option(
+    "-OU", "--organizational-unit-name", default="Extension Development", help="sets organizational unit name (OU)"
+)
+@click.option(
+    "-L", "--locality-name", help="sets locality name (L)"
+)
+@click.option(
+    "-S", "--state-or-province-name", help="sets state or province name (S)"
+)
+@click.option(
+    "-C", "--country-name", help="sets country name (C)"
+)
 def gendevcert(**kwargs):
     ca_cert_file_path = kwargs["ca_cert"]
     ca_key_file_path = kwargs["ca_key"]
@@ -109,6 +157,7 @@ def gendevcert(**kwargs):
         ca_key_file_path,
         dev_cert_file_path,
         dev_key_file_path,
+        kwargs
     )
 
 

@@ -27,7 +27,26 @@ from . import utils as dtcliutils
 CHUNK_SIZE = 1024 * 1024
 
 
-def generate_ca(ca_cert_file_path, ca_key_file_path):
+def _generate_x509_name(kwargs):
+    names_attributes = []
+    if kwargs["common_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.COMMON_NAME, kwargs["common_name"]))
+    if kwargs["organization_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.ORGANIZATION_NAME, kwargs["organization_name"]))
+    if kwargs["organizational_unit_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, kwargs["organizational_unit_name"]))
+
+    if kwargs["locality_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.LOCALITY_NAME, kwargs["locality_name"]))
+    if kwargs["state_or_province_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, kwargs["state_or_province_name"]))
+    if kwargs["country_name"]:
+        names_attributes.append(crypto_x509.NameAttribute(NameOID.COUNTRY_NAME, kwargs["country_name"]))
+
+    return crypto_x509.Name(names_attributes)
+
+
+def generate_ca(ca_cert_file_path, ca_key_file_path, kwargs):
     print("Generating CA...")
     private_key = rsa.generate_private_key(
         public_exponent=65537, key_size=2048
@@ -43,36 +62,8 @@ def generate_ca(ca_cert_file_path, ca_key_file_path):
     print("Wrote CA private key: %s" % ca_key_file_path)
     public_key = private_key.public_key()
     builder = crypto_x509.CertificateBuilder()
-    builder = builder.subject_name(
-        crypto_x509.Name(
-            [
-                crypto_x509.NameAttribute(
-                    NameOID.COMMON_NAME, u"Default Extension CA"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATION_NAME, u"Some Company"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATIONAL_UNIT_NAME, u"Extension CA"
-                ),
-            ]
-        )
-    )
-    builder = builder.issuer_name(
-        crypto_x509.Name(
-            [
-                crypto_x509.NameAttribute(
-                    NameOID.COMMON_NAME, u"Default Extension CA"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATION_NAME, u"Some Company"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATIONAL_UNIT_NAME, u"Extension CA"
-                ),
-            ]
-        )
-    )
+    builder = builder.subject_name(_generate_x509_name(kwargs))
+    builder = builder.issuer_name(_generate_x509_name(kwargs))
     builder = builder.not_valid_before(
         datetime.datetime.today() - datetime.timedelta(days=1)
     )
@@ -98,7 +89,7 @@ def generate_ca(ca_cert_file_path, ca_key_file_path):
 
 
 def generate_cert(
-    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path
+    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, kwargs
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
@@ -121,37 +112,14 @@ def generate_cert(
     print("Wrote developer private key: %s" % dev_key_file_path)
     public_key = private_key.public_key()
     builder = crypto_x509.CertificateBuilder()
-    builder = builder.subject_name(
-        crypto_x509.Name(
-            [
-                crypto_x509.NameAttribute(
-                    NameOID.COMMON_NAME, u"Some Developer"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATION_NAME, u"Some Company"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATIONAL_UNIT_NAME, u"Extension Development"
-                ),
-            ]
-        )
-    )
-    # FIXME load CA cert and use proper values
-    builder = builder.issuer_name(
-        crypto_x509.Name(
-            [
-                crypto_x509.NameAttribute(
-                    NameOID.COMMON_NAME, u"Default Extension CA"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATION_NAME, u"Some Company"
-                ),
-                crypto_x509.NameAttribute(
-                    NameOID.ORGANIZATIONAL_UNIT_NAME, u"Extension CA"
-                ),
-            ]
-        )
-    )
+    print("Loading CA certificate %s" % ca_cert_file_path)
+    with open(ca_cert_file_path, "rb") as fp:
+        ca_cert = crypto_x509.load_pem_x509_certificate(fp.read())
+    subject_name = _generate_x509_name(kwargs)
+    if ca_cert.issuer == subject_name:
+        raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
+    builder = builder.subject_name(subject_name)
+    builder = builder.issuer_name(ca_cert.issuer)
     builder = builder.not_valid_before(
         datetime.datetime.today() - datetime.timedelta(days=1)
     )
