@@ -15,33 +15,34 @@
 import datetime
 
 from asn1crypto import cms, util, x509, core, pem
+from collections import namedtuple
 from cryptography import x509 as crypto_x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa, utils
 from cryptography.hazmat.backends import default_backend
+from types import SimpleNamespace
 
 from . import utils as dtcliutils
 
 
 CHUNK_SIZE = 1024 * 1024
 
+X509NameAttribute = namedtuple("X509NameAttribute", "name oid")
+X509NameAttributes = SimpleNamespace(
+    CN=X509NameAttribute("common_name", NameOID.COMMON_NAME),
+    O=X509NameAttribute("organization_name", NameOID.ORGANIZATION_NAME),
+    OU=X509NameAttribute("organizational_unit_name", NameOID.ORGANIZATIONAL_UNIT_NAME),
+    L=X509NameAttribute("locality_name", NameOID.LOCALITY_NAME),
+    S=X509NameAttribute("state_or_province_name",NameOID.STATE_OR_PROVINCE_NAME),
+    C=X509NameAttribute("country_name", NameOID.COUNTRY_NAME)
+)
 
 def _generate_x509_name(kwargs):
     names_attributes = []
-    if kwargs["common_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.COMMON_NAME, kwargs["common_name"]))
-    if kwargs["organization_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.ORGANIZATION_NAME, kwargs["organization_name"]))
-    if kwargs["organizational_unit_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, kwargs["organizational_unit_name"]))
-
-    if kwargs["locality_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.LOCALITY_NAME, kwargs["locality_name"]))
-    if kwargs["state_or_province_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, kwargs["state_or_province_name"]))
-    if kwargs["country_name"]:
-        names_attributes.append(crypto_x509.NameAttribute(NameOID.COUNTRY_NAME, kwargs["country_name"]))
+    for name, oid in vars(X509NameAttributes).values():
+        if name in kwargs and kwargs[name]:
+            names_attributes.append(crypto_x509.NameAttribute(oid, kwargs[name]))
 
     return crypto_x509.Name(names_attributes)
 
@@ -97,6 +98,14 @@ def generate_cert(
             fp.read(), password=None, backend=default_backend()
         )
 
+    print("Loading CA certificate %s" % ca_cert_file_path)
+    with open(ca_cert_file_path, "rb") as fp:
+        ca_cert = crypto_x509.load_pem_x509_certificate(fp.read())
+    subject_name = _generate_x509_name(kwargs)
+    if ca_cert.issuer == subject_name:
+        raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
+
+
     print("Generating developer certificate...")
     private_key = rsa.generate_private_key(
         public_exponent=65537, key_size=2048
@@ -109,15 +118,10 @@ def generate_cert(
                 encryption_algorithm=serialization.NoEncryption(),
             )
         )
-    print("Wrote developer private key: %s" % dev_key_file_path)
     public_key = private_key.public_key()
+    print("Wrote developer private key: %s" % dev_key_file_path)
+
     builder = crypto_x509.CertificateBuilder()
-    print("Loading CA certificate %s" % ca_cert_file_path)
-    with open(ca_cert_file_path, "rb") as fp:
-        ca_cert = crypto_x509.load_pem_x509_certificate(fp.read())
-    subject_name = _generate_x509_name(kwargs)
-    if ca_cert.issuer == subject_name:
-        raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
     builder = builder.subject_name(subject_name)
     builder = builder.issuer_name(ca_cert.issuer)
     builder = builder.not_valid_before(
