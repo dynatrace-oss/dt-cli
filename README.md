@@ -91,85 +91,12 @@ Extension subcommand has two aliases for convenience: `dt ext` or `dt extensions
     --private-key TEXT          Private key used for signing. Default:
                                 ./developer.key
 
-    --keep-intermediate-files   Do not delete the signature and `extension.zip'
+    --keep-intermediate-files   Do not delete the signature and 'extension.zip'
                                 files after building extension archive
 
     -h, --help                  Show this message and exit.
   ```
 
-## Development
-
-This tool requires Python 3.8+ and is build with [poetry](https://python-poetry.org/).
-Before starting, make sure you have a dedicated [virtual environment](https://docs.python.org/3/library/venv.html)
-for working with this project. Create your virtual environment in project directory:
-
-```shell
-python -m venv env
-````
-
-Activate it before proceeding:
-
-```shell
-source ./env/bin/activate
-```
-
-Install `poetry`:
-
-```shell
-$ pip install poetry
-```
-
-Now you can build the project and get the wheel file:
-
-```shell
-$(env) poetry build
-```
-
-The resulting wheel file can be found in the `dist` folder, e.g. `./dist/dtcli-0.0.1-py3-none-any.whl`
-
-If you have a separate environment where `dtcli` should be available, you should install the  wheel file there. Simply run the following command:
-
-```shell
-$ pip install dt_cli-0.0.1-py3-none-any.whl
-```
-
-If you want to start using it in the environment where it was built, you just use this `poetry` command:
-
-```shell
-$ poetry install
-```
-
-From this moment you can start using the command line tool directly (or from your code, see a dedicated section below):
-
-```shell
-$ dt --help
-```
-
-Each command contains its own help description, see:
-
-```shell
-$ dt ext build --help
-```
-
-## Testing
-
-Run `pytest` tests
-
-```shell
-poetry run pytest --flake8
-```
-
-Run `mypy` tests
-
-```shell
-poetry run pytest --mypy dtcli --strict
-```
-
-Run test coverage report
-
-```shell
-poetry run pytest --cov . --cov-report html
-```
 
 ## Using dt-cli from your Python code
 
@@ -191,6 +118,10 @@ building.build_extension(
     keep_intermediate_files=False,
 )
 ```
+
+## Development
+
+See our [CONTRIBUTING](CONTRIBUTING.md) guidelines and instructions.
 
 ## Contributions
 

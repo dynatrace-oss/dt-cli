@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os.path
+import re
 
 
 class ExtensionBuildError(Exception):
@@ -22,6 +23,11 @@ class ExtensionBuildError(Exception):
 class KeyGenerationError(Exception):
     pass
 
+def require_extension_name_valid(extension_name):
+    extension_name_regex = re.compile("^custom:(?!\\.)(?!.*\\.\\.)(?!.*\\.$)[a-z0-9-_\\.]+$")
+    if not extension_name_regex.match(extension_name):
+        print("%s doesn't satisfy extension naming format, aborting!" % extension_name)
+        raise ExtensionBuildError()
 
 def check_file_exists(file_path, exception_cls=ExtensionBuildError):
     """Returns True and prints a message if file under given path exists and is a real file.
