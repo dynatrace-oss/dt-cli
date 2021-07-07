@@ -59,22 +59,28 @@ def extension_dev():
     "--force", is_flag=True, help="overwrites already existing CA key and certificate"
 )
 @click.option(
-    "-CN", "--common-name", default="Default Extension CA", help="sets common name (CN)"
+    "-CN", "--common-name", signing.X509NameAttributes.CN.name,
+    default="Default Extension CA", help="sets common name (CN)"
 )
 @click.option(
-    "-O", "--organization-name", default="Some Company", help="sets organization name (O)"
+    "-O", "--organization-name", signing.X509NameAttributes.O.name,
+    default="Some Company", help="sets organization name (O)"
 )
 @click.option(
-    "-OU", "--organizational-unit-name", default="Extension CA", help="sets organizational unit name (OU)"
+    "-OU", "--organizational-unit-name", signing.X509NameAttributes.OU.name,
+    default="Extension CA", help="sets organizational unit name (OU)"
 )
 @click.option(
-    "-L", "--locality-name", help="sets locality name (L)"
+    "-L", "--locality-name", signing.X509NameAttributes.L.name,
+    help="sets locality name (L)"
 )
 @click.option(
-    "-S", "--state-or-province-name", help="sets state or province name (S)"
+    "-S", "--state-or-province-name", signing.X509NameAttributes.S.name,
+    help="sets state or province name (S)"
 )
 @click.option(
-    "-C", "--country-name", help="sets country name (C)"
+    "-C", "--country-name", signing.X509NameAttributes.C.name,
+    help="sets country name (C)"
 )
 def genca(**kwargs):
     ca_cert_file_path = kwargs["ca_cert"]
@@ -121,22 +127,28 @@ def genca(**kwargs):
     help="Developer key. Default: " + DEFAULT_DEV_KEY,
 )
 @click.option(
-    "-CN", "--common-name", default="Some Developer", help="sets common name (CN)"
+    "-CN", "--common-name", signing.X509NameAttributes.CN.name,
+    default="Some Developer", help="sets common name (CN)"
 )
 @click.option(
-    "-O", "--organization-name", default="Some Company", help="sets organization name (O)"
+    "-O", "--organization-name", signing.X509NameAttributes.O.name,
+    default="Some Company", help="sets organization name (O)"
 )
 @click.option(
-    "-OU", "--organizational-unit-name", default="Extension Development", help="sets organizational unit name (OU)"
+    "-OU", "--organizational-unit-name", signing.X509NameAttributes.OU.name,
+    default="Extension Development", help="sets organizational unit name (OU)"
 )
 @click.option(
-    "-L", "--locality-name", help="sets locality name (L)"
+    "-L", "--locality-name", signing.X509NameAttributes.L.name,
+    help="sets locality name (L)"
 )
 @click.option(
-    "-S", "--state-or-province-name", help="sets state or province name (S)"
+    "-S", "--state-or-province-name", signing.X509NameAttributes.S.name,
+    help="sets state or province name (S)"
 )
 @click.option(
-    "-C", "--country-name", help="sets country name (C)"
+    "-C", "--country-name", signing.X509NameAttributes.C.name,
+    help="sets country name (C)"
 )
 def gendevcert(**kwargs):
     ca_cert_file_path = kwargs["ca_cert"]
