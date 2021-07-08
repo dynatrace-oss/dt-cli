@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import click
+import re
+
 from click_aliases import ClickAliasedGroup
 
 from dtcli.constants import *
@@ -24,6 +26,60 @@ from dtcli import __version__
 from dtcli import dev
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+def validate_parse_subject(ctx, param, value):
+    if value is None:
+        return None
+
+    def split_pair_and_verify_key(pair):
+        key, val = pair.replace("\\", "").split('=')
+        if key not in signing.X509NameAttributes:
+            raise click.BadParameter(f"subject attributes must be one of {list(signing.X509NameAttributes)}. Got '{key}' instead.")
+        return key, val
+
+    try:
+        return(dict(map(split_pair_and_verify_key, filter(None, re.split(r"(?<!\\)\/", value)))))
+        return value
+    except ValueError:
+        raise click.BadParameter(f"format must be '/key0=value0/key1=value1/...' got: '{value}'")
+
+
+def _genca(ca_cert_path, ca_key_path, force, subject):
+    if force:
+        print("Forced generation option used. Already existing CA certificate files will be overwritten.")
+        check_file_exists(ca_cert_path, KeyGenerationError)
+        check_file_exists(ca_key_path, KeyGenerationError)
+        signing.generate_ca(ca_cert_path, ca_key_path, subject)
+        return
+
+    if (
+        check_file_exists(ca_cert_path, KeyGenerationError, warn_overwrite=False) and
+        check_file_exists(ca_key_path, KeyGenerationError, warn_overwrite=False)
+    ):
+        raise KeyGenerationError(
+            "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
+        )
+
+    signing.generate_ca(ca_cert_path, ca_key_path, subject)
+
+
+def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject):
+    require_file_exists(ca_cert_path)
+    require_file_exists(ca_key_path)
+    require_is_not_dir(dev_cert_path)
+    require_is_not_dir(dev_cert_path)
+
+    check_file_exists(dev_cert_path, KeyGenerationError)
+    check_file_exists(dev_cert_path, KeyGenerationError)
+
+    signing.generate_cert(
+        ca_cert_path,
+        ca_key_path,
+        dev_cert_path,
+        dev_cert_path,
+        subject
+    )
+
 
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
@@ -46,131 +102,77 @@ def extension_dev():
     help="creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
 @click.option(
-    "--ca-cert",
-    default=DEFAULT_CA_CERT,
-    help="CA certificate. Default: " + DEFAULT_CA_CERT,
+    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
 )
 @click.option(
-    "--ca-key",
-    default=DEFAULT_CA_KEY,
-    help="CA key. Default: " + DEFAULT_CA_KEY,
+    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
 )
 @click.option(
     "--force", is_flag=True, help="overwrites already existing CA key and certificate"
 )
 @click.option(
-    "-CN", "--common-name", signing.X509NameAttributes.CN.name,
-    default="Default Extension CA", help="sets common name (CN)"
-)
-@click.option(
-    "-O", "--organization-name", signing.X509NameAttributes.O.name,
-    default="Some Company", help="sets organization name (O)"
-)
-@click.option(
-    "-OU", "--organizational-unit-name", signing.X509NameAttributes.OU.name,
-    default="Extension CA", help="sets organizational unit name (OU)"
-)
-@click.option(
-    "-L", "--locality-name", signing.X509NameAttributes.L.name,
-    help="sets locality name (L)"
-)
-@click.option(
-    "-S", "--state-or-province-name", signing.X509NameAttributes.S.name,
-    help="sets state or province name (S)"
-)
-@click.option(
-    "-C", "--country-name", signing.X509NameAttributes.C.name,
-    help="sets country name (C)"
+    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
 def genca(**kwargs):
-    ca_cert_file_path = kwargs["ca_cert"]
-    ca_key_file_path = kwargs["ca_key"]
-    force = kwargs["force"]
-    if force:
-        print("Forced generation option used. Already existing CA certificate files will be overwritten.")
-        check_file_exists(ca_cert_file_path, KeyGenerationError)
-        check_file_exists(ca_key_file_path, KeyGenerationError)
-        signing.generate_ca(ca_cert_file_path, ca_key_file_path, kwargs)
-        return
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"])
 
-    if (
-        check_file_exists(ca_cert_file_path, KeyGenerationError, warn_overwrite=False) and
-        check_file_exists(ca_key_file_path, KeyGenerationError, warn_overwrite=False)
-    ):
-        print("CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway.")
-        return
-
-    signing.generate_ca(ca_cert_file_path, ca_key_file_path, kwargs)
 
 
 @extension.command(
     help="creates developer key and certificate used for extension signing"
 )
 @click.option(
-    "--ca-cert",
-    default=DEFAULT_CA_CERT,
-    help="CA certificate. Default: " + DEFAULT_CA_CERT,
+    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate input path"
 )
 @click.option(
-    "--ca-key",
-    default=DEFAULT_CA_KEY,
-    help="CA key. Default: " + DEFAULT_CA_KEY,
+    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key input path"
 )
 @click.option(
-    "--dev-cert",
-    default=DEFAULT_DEV_CERT,
-    help="Developer certificate. Default: " + DEFAULT_DEV_CERT,
+    "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
 )
 @click.option(
-    "--dev-key",
-    default=DEFAULT_DEV_KEY,
-    help="Developer key. Default: " + DEFAULT_DEV_KEY,
+    "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
 )
 @click.option(
-    "-CN", "--common-name", signing.X509NameAttributes.CN.name,
-    default="Some Developer", help="sets common name (CN)"
-)
-@click.option(
-    "-O", "--organization-name", signing.X509NameAttributes.O.name,
-    default="Some Company", help="sets organization name (O)"
-)
-@click.option(
-    "-OU", "--organizational-unit-name", signing.X509NameAttributes.OU.name,
-    default="Extension Development", help="sets organizational unit name (OU)"
-)
-@click.option(
-    "-L", "--locality-name", signing.X509NameAttributes.L.name,
-    help="sets locality name (L)"
-)
-@click.option(
-    "-S", "--state-or-province-name", signing.X509NameAttributes.S.name,
-    help="sets state or province name (S)"
-)
-@click.option(
-    "-C", "--country-name", signing.X509NameAttributes.C.name,
-    help="sets country name (C)"
+    "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
+    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
 def gendevcert(**kwargs):
-    ca_cert_file_path = kwargs["ca_cert"]
-    ca_key_file_path = kwargs["ca_key"]
-    dev_cert_file_path = kwargs["dev_cert"]
-    dev_key_file_path = kwargs["dev_key"]
+    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"])
 
-    require_file_exists(ca_cert_file_path)
-    require_file_exists(ca_key_file_path)
-    require_is_not_dir(dev_cert_file_path)
-    require_is_not_dir(dev_key_file_path)
 
-    check_file_exists(dev_key_file_path, KeyGenerationError)
-    check_file_exists(dev_cert_file_path, KeyGenerationError)
 
-    signing.generate_cert(
-        ca_cert_file_path,
-        ca_key_file_path,
-        dev_cert_file_path,
-        dev_key_file_path,
-        kwargs
-    )
+@extension.command(
+    help="creates CA key, CA certificate, developer key and developer certificate used for extension signing"
+)
+@click.option(
+    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
+)
+@click.option(
+    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
+)
+@click.option(
+    "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
+)
+@click.option(
+    "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
+)
+@click.option(
+    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
+)
+@click.option(
+    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+)
+@click.option(
+    "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
+    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+)
+def gencerts(**kwargs):
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"])
+    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"])
+
 
 
 @extension.command(
@@ -178,25 +180,23 @@ def gendevcert(**kwargs):
 )
 @click.option(
     "--extension-directory",
-    default=DEFAULT_EXTENSION_DIR,
-    help="Directory where extension files are. Default: "
-    + DEFAULT_EXTENSION_DIR,
+    default=DEFAULT_EXTENSION_DIR, show_default=True,
+    help="Directory where extension files are",
 )
 @click.option(
     "--target-directory",
-    default=DEFAULT_TARGET_PATH,
-    help="Directory where extension package should be written. Default: "
-    + DEFAULT_TARGET_PATH,
+    default=DEFAULT_TARGET_PATH, show_default=True,
+    help="Directory where extension package should be written",
 )
 @click.option(
     "--certificate",
-    default=DEFAULT_DEV_CERT,
-    help="Certificate used for signing. Default: " + DEFAULT_DEV_CERT,
+    default=DEFAULT_DEV_CERT, show_default=True,
+    help="Certificate used for signing",
 )
 @click.option(
     "--private-key",
-    default=DEFAULT_DEV_KEY,
-    help="Private key used for signing. Default: " + DEFAULT_DEV_KEY,
+    default=DEFAULT_DEV_KEY, show_default=True,
+    help="Private key used for signing",
 )
 @click.option(
     "--keep-intermediate-files",
