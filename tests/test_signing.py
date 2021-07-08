@@ -29,12 +29,12 @@ def test_generate_ca():
         cert_path,
         key_path,
         {
-            signing.X509NameAttributes.CN.name: "Some Common Name",
-            signing.X509NameAttributes.O.name: "Some Org Name",
-            signing.X509NameAttributes.OU.name: "Some OU",
-            signing.X509NameAttributes.L.name: "Some Locality",
-            signing.X509NameAttributes.S.name: "Some State",
-            signing.X509NameAttributes.C.name: "PL"
+            "CN": "Some Common Name",
+            "O": "Some Org Name",
+            "OU": "Some OU",
+            "L": "Some Locality",
+            "S": "Some State",
+            "C": "PL"
         }
     )
     assert os.path.exists(cert_path)
@@ -114,12 +114,12 @@ def test_generate_cert():
         ca_cert_path,
         ca_key_path,
         {
-            signing.X509NameAttributes.CN.name: "Some Common Name",
-            signing.X509NameAttributes.O.name: "Some Org Name",
-            signing.X509NameAttributes.OU.name: "Some OU",
-            signing.X509NameAttributes.L.name: "Some Locality",
-            signing.X509NameAttributes.S.name: "Some State",
-            signing.X509NameAttributes.C.name: "PL"
+            "CN": "Some Common Name",
+            "O": "Some Org Name",
+            "OU": "Some OU",
+            "L": "Some Locality",
+            "S": "Some State",
+            "C": "PL"
         }
     )
     assert os.path.exists(ca_cert_path)
@@ -133,12 +133,12 @@ def test_generate_cert():
         dev_cert_path,
         dev_key_path,
         {
-            signing.X509NameAttributes.CN.name: "Some Other Common Name",
-            signing.X509NameAttributes.O.name: "Some Other Org Name",
-            signing.X509NameAttributes.OU.name: "Some Other OU",
-            signing.X509NameAttributes.L.name: "Some Locality",
-            signing.X509NameAttributes.S.name: "Some State",
-            signing.X509NameAttributes.C.name: "PL"
+            "CN": "Some Other Common Name",
+            "O": "Some Other Org Name",
+            "OU": "Some Other OU",
+            "L": "Some Locality",
+            "S": "Some State",
+            "C": "PL"
         }
     )
     assert os.path.exists(dev_cert_path)
@@ -181,12 +181,12 @@ def test_generate_cert_issuer_eq_subject():
         ca_cert_path,
         ca_key_path,
         {
-            signing.X509NameAttributes.CN.name: "Some Common Name",
-            signing.X509NameAttributes.O.name: "Some Org Name",
-            signing.X509NameAttributes.OU.name: "Some OU",
-            signing.X509NameAttributes.L.name: "Some Locality",
-            signing.X509NameAttributes.S.name: "Some State",
-            signing.X509NameAttributes.C.name: "PL"
+            "CN": "Some Common Name",
+            "O": "Some Org Name",
+            "OU": "Some OU",
+            "L": "Some Locality",
+            "S": "Some State",
+            "C": "PL"
         }
     )
     assert os.path.exists(ca_cert_path)
@@ -200,14 +200,14 @@ def test_generate_cert_issuer_eq_subject():
             ca_key_path,
             dev_cert_path,
             dev_key_path,
-            {
-                signing.X509NameAttributes.CN.name: "Some Common Name",
-                signing.X509NameAttributes.O.name: "Some Org Name",
-                signing.X509NameAttributes.OU.name: "Some OU",
-                signing.X509NameAttributes.L.name: "Some Locality",
-                signing.X509NameAttributes.S.name: "Some State",
-                signing.X509NameAttributes.C.name: "PL"
-            }
+        {
+            "CN": "Some Common Name",
+            "O": "Some Org Name",
+            "OU": "Some OU",
+            "L": "Some Locality",
+            "S": "Some State",
+            "C": "PL"
+        }
         )
     assert not os.path.exists(dev_cert_path)
     assert not os.path.exists(dev_key_path)
