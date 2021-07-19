@@ -70,7 +70,12 @@ def _package(
 ):
     extension_yaml_path = os.path.join(extension_dir_path, EXTENSION_YAML)
     with open(extension_yaml_path, "r") as fp:
-        metadata = yaml.safe_load(fp)
+        try:
+            metadata = yaml.safe_load(fp)
+        except Exception as e:
+            print(e)
+            raise
+
     extension_file_name = "%s-%s.zip" % (
         metadata["name"],
         metadata["version"],
