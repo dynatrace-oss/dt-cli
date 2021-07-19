@@ -73,7 +73,7 @@ def _package(
         try:
             metadata = yaml.safe_load(fp)
         except Exception as e:
-            print(e)
+            print(f"Error while parsing yaml: {e}")
             raise
 
     extension_file_name = "%s-%s.zip" % (
