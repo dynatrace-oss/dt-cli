@@ -67,16 +67,16 @@ def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject)
     require_file_exists(ca_cert_path)
     require_file_exists(ca_key_path)
     require_is_not_dir(dev_cert_path)
-    require_is_not_dir(dev_cert_path)
+    require_is_not_dir(dev_key_path)
 
     check_file_exists(dev_cert_path, KeyGenerationError)
-    check_file_exists(dev_cert_path, KeyGenerationError)
+    check_file_exists(dev_key_path, KeyGenerationError)
 
     signing.generate_cert(
         ca_cert_path,
         ca_key_path,
         dev_cert_path,
-        dev_cert_path,
+        dev_key_path,
         subject
     )
 
