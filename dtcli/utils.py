@@ -19,6 +19,8 @@ import re
 class ExtensionBuildError(Exception):
     pass
 
+class ExtensionValidationError(Exception):
+    pass
 
 class KeyGenerationError(Exception):
     pass
