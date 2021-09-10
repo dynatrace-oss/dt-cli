@@ -32,3 +32,19 @@ def validate(extension_zip_file, tenant_url, api_token):
         except requests.exceptions.HTTPError as e:
             print(f"Extension validation failed!")
             raise dtcliutils.ExtensionValidationError(response.text)
+
+def upload(extension_zip_file, tenant_url, api_token):
+    url = f"{tenant_url}/api/v2/extensions"
+
+    with open(extension_zip_file, "rb") as extzf:
+        headers = {
+            'Accept': 'application/json; charset=utf-8',
+            'Authorization': f'Api-Token {api_token}'
+        }
+        try:
+            response = requests.post(url, files={'file': (extension_zip_file, extzf, 'application/zip')}, headers=headers)
+            response.raise_for_status()
+            print(f"Extension upload successful!")
+        except requests.exceptions.HTTPError as e:
+            print(f"Extension upload failed!")
+            raise dtcliutils.ExtensionValidationError(response.text)

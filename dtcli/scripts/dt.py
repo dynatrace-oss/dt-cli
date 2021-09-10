@@ -24,7 +24,7 @@ from dtcli import building
 from dtcli import signing
 from dtcli import __version__
 from dtcli import dev
-from dtcli import validation
+from dtcli import server_api
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -265,7 +265,26 @@ def build(**kwargs):
 def validate(**kwargs):
     extension_zip = kwargs['extension_zip']
     require_file_exists(extension_zip)
-    validation.validate(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+    server_api.validate(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+
+
+
+@extension.command(
+    help="Uploads extension package to the Dynatrace Cluster"
+)
+@click.argument(
+    "extension-zip", type=click.Path(exists=True, readable=True)
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@click.option(
+    "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+)
+def upload(**kwargs):
+    extension_zip = kwargs['extension_zip']
+    require_file_exists(extension_zip)
+    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
 
 
 
