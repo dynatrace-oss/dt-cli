@@ -86,21 +86,32 @@ def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject)
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
 @click.version_option(version=__version__)
 def main():
+    """
+    Dynatrace CLI is a command line utility that assists in signing, building and uploading extensions
+    for Dynatrace Extensions 2.0 framework
+    """
     pass
 
 
 @main.group(aliases=["extensions", "ext"])
 def extension():
+    """
+    Set of utilities for signing, building and uploading extensions
+
+    \b
+    Example flow:
+        gencerts -> build -> upload
+    """
     pass
 
 
-@main.group(aliases=["extensions_dev", "ext_dev"])
+@main.group(aliases=["extensions_dev", "ext_dev"], hidden=True)
 def extension_dev():
     pass
 
 
 @extension.command(
-    help="creates CA key and certificate, needed to create developer certificate used for extension signing"
+    help="Creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
 @click.option(
     "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
@@ -121,7 +132,7 @@ def genca(**kwargs):
 
 
 @extension.command(
-    help="creates developer key and certificate used for extension signing"
+    help="Creates developer key and certificate used for extension signing"
 )
 @click.option(
     "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate input path"
@@ -145,7 +156,7 @@ def gendevcert(**kwargs):
 
 
 @extension.command(
-    help="creates CA key, CA certificate, developer key and developer certificate used for extension signing"
+    help="Creates CA key, CA certificate, developer key and developer certificate used for extension signing"
 )
 @click.option(
     "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
@@ -177,12 +188,12 @@ def gencerts(**kwargs):
 
 
 @extension.command(
-    help="builds extension file from the given extension directory (`extension' in current dir. is the default)"
+    help=f"Builds extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR})"
 )
 @click.option(
     "--extension-directory",
     default=DEFAULT_EXTENSION_DIR, show_default=True,
-    help="Directory where extension files are",
+    help="Directory where the `extension.yaml' and other extension files are located",
 )
 @click.option(
     "--target-directory",
@@ -192,12 +203,12 @@ def gencerts(**kwargs):
 @click.option(
     "--certificate",
     default=DEFAULT_DEV_CERT, show_default=True,
-    help="Certificate used for signing",
+    help="Developer certificate used for signing",
 )
 @click.option(
     "--private-key",
     default=DEFAULT_DEV_KEY, show_default=True,
-    help="Private key used for signing",
+    help="Developer private key used for signing",
 )
 @click.option(
     "--keep-intermediate-files",
@@ -259,7 +270,7 @@ def validate(**kwargs):
 
 
 @extension_dev.command(
-    help="comand packs python package as a datasource. It uses pip to download all dependencies and create whl files"
+    help="Command packs python package as a datasource. It uses pip to download all dependencies and create whl files"
 )
 @click.argument(
     "path-to-setup-py",
