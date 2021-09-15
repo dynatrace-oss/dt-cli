@@ -44,10 +44,10 @@ def _generate_x509_name(attributes):
     return crypto_x509.Name(names_attributes)
 
 
-def generate_ca(ca_cert_file_path, ca_key_file_path, subject):
+def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after):
     print("Generating CA...")
     private_key = rsa.generate_private_key(
-        public_exponent=65537, key_size=2048
+        public_exponent=65537, key_size=4096
     )
     with open(ca_key_file_path, "wb") as fp:
         fp.write(
@@ -62,10 +62,8 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject):
     builder = crypto_x509.CertificateBuilder()
     builder = builder.subject_name(_generate_x509_name(subject))
     builder = builder.issuer_name(_generate_x509_name(subject))
-    builder = builder.not_valid_before(
-        datetime.datetime.today() - datetime.timedelta(days=1)
-    )
-    builder = builder.not_valid_after(datetime.datetime(2222, 2, 2))
+    builder = builder.not_valid_before(datetime.datetime.today() - datetime.timedelta(days=1))
+    builder = builder.not_valid_after(not_valid_after)
     builder = builder.serial_number(crypto_x509.random_serial_number())
     builder = builder.public_key(public_key)
     builder = builder.add_extension(
@@ -87,7 +85,7 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject):
 
 
 def generate_cert(
-    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject
+    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject, not_valid_after
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
@@ -105,7 +103,7 @@ def generate_cert(
 
     print("Generating developer certificate...")
     private_key = rsa.generate_private_key(
-        public_exponent=65537, key_size=2048
+        public_exponent=65537, key_size=4096
     )
     with open(dev_key_file_path, "wb") as fp:
         fp.write(
@@ -121,10 +119,8 @@ def generate_cert(
     builder = crypto_x509.CertificateBuilder()
     builder = builder.subject_name(subject_name)
     builder = builder.issuer_name(ca_cert.issuer)
-    builder = builder.not_valid_before(
-        datetime.datetime.today() - datetime.timedelta(days=1)
-    )
-    builder = builder.not_valid_after(datetime.datetime(2222, 2, 2))
+    builder = builder.not_valid_before(datetime.datetime.today() - datetime.timedelta(days=1))
+    builder = builder.not_valid_after(not_valid_after)
     builder = builder.serial_number(crypto_x509.random_serial_number())
     builder = builder.public_key(public_key)
     certificate = builder.sign(

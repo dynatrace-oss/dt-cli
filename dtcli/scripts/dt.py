@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import click
+import datetime
 import re
 
 from click_aliases import ClickAliasedGroup
@@ -45,12 +46,12 @@ def validate_parse_subject(ctx, param, value):
         raise click.BadParameter(f"format must be '/key0=value0/key1=value1/...' got: '{value}'")
 
 
-def _genca(ca_cert_path, ca_key_path, force, subject):
+def _genca(ca_cert_path, ca_key_path, force, subject, days_valid):
     if force:
         print("Forced generation option used. Already existing CA certificate files will be overwritten.")
         check_file_exists(ca_cert_path, KeyGenerationError)
         check_file_exists(ca_key_path, KeyGenerationError)
-        signing.generate_ca(ca_cert_path, ca_key_path, subject)
+        signing.generate_ca(ca_cert_path, ca_key_path, subject, datetime.datetime.today() + datetime.timedelta(days=days_valid))
         return
 
     if (
@@ -61,10 +62,10 @@ def _genca(ca_cert_path, ca_key_path, force, subject):
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
         )
 
-    signing.generate_ca(ca_cert_path, ca_key_path, subject)
+    signing.generate_ca(ca_cert_path, ca_key_path, subject, datetime.datetime.today() + datetime.timedelta(days=days_valid))
 
 
-def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject):
+def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid):
     require_file_exists(ca_cert_path)
     require_file_exists(ca_key_path)
     require_is_not_dir(dev_cert_path)
@@ -78,7 +79,8 @@ def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject)
         ca_key_path,
         dev_cert_path,
         dev_key_path,
-        subject
+        subject,
+        datetime.datetime.today() + datetime.timedelta(days=days_valid)
     )
 
 
@@ -126,8 +128,11 @@ def extension_dev():
     "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
     show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
+@click.option(
+    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+)
 def genca(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"])
 
 
 
@@ -150,8 +155,11 @@ def genca(**kwargs):
     "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
     show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
+@click.option(
+    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+)
 def gendevcert(**kwargs):
-    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"])
+    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"], kwargs["days_valid"])
 
 
 
@@ -181,9 +189,12 @@ def gendevcert(**kwargs):
     "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
     show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
+@click.option(
+    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+)
 def gencerts(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"])
-    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"])
+    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"], kwargs["days_valid"])
 
 
 

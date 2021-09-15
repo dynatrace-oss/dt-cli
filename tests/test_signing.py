@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import os
 import pytest
 
@@ -24,6 +25,7 @@ from dtcli import utils
 def test_generate_ca():
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
+    not_valid_after = datetime.datetime.today().replace(microsecond=0) + datetime.timedelta(days=123)
 
     signing.generate_ca(
         cert_path,
@@ -35,7 +37,8 @@ def test_generate_ca():
             "L": "Some Locality",
             "S": "Some State",
             "C": "PL"
-        }
+        },
+        not_valid_after
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -57,6 +60,8 @@ def test_generate_ca():
     assert ca_cert.subject.get_attributes_for_oid(NameOID.STATE_OR_PROVINCE_NAME)[0].value == "Some State"
     assert ca_cert.subject.get_attributes_for_oid(NameOID.COUNTRY_NAME)[0].value == "PL"
 
+    assert ca_cert.not_valid_after == not_valid_after
+
     with open(key_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(fp.read(), password=None)
     assert (
@@ -74,7 +79,8 @@ def test_generate_ca_empty_attributes():
     signing.generate_ca(
         cert_path,
         key_path,
-        {}
+        {},
+        datetime.datetime.today() + datetime.timedelta(days=1)
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -120,13 +126,16 @@ def test_generate_cert():
             "L": "Some Locality",
             "S": "Some State",
             "C": "PL"
-        }
+        },
+        datetime.datetime.today() + datetime.timedelta(days=1)
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
 
     dev_cert_path = "test_dev_certificate.crt"
     dev_key_path = "test_dev_key.key"
+    not_valid_after = datetime.datetime.today().replace(microsecond=0) + datetime.timedelta(days=123)
+
     signing.generate_cert(
         ca_cert_path,
         ca_key_path,
@@ -139,7 +148,8 @@ def test_generate_cert():
             "L": "Some Locality",
             "S": "Some State",
             "C": "PL"
-        }
+        },
+        not_valid_after
     )
     assert os.path.exists(dev_cert_path)
     assert os.path.exists(dev_key_path)
@@ -160,6 +170,8 @@ def test_generate_cert():
     assert dev_cert.subject.get_attributes_for_oid(NameOID.LOCALITY_NAME)[0].value == "Some Locality"
     assert dev_cert.subject.get_attributes_for_oid(NameOID.STATE_OR_PROVINCE_NAME)[0].value == "Some State"
     assert dev_cert.subject.get_attributes_for_oid(NameOID.COUNTRY_NAME)[0].value == "PL"
+
+    assert dev_cert.not_valid_after == not_valid_after
 
     with open(dev_key_path, "rb") as fp:
         dev_private_key = serialization.load_pem_private_key(fp.read(), password=None)
@@ -187,7 +199,8 @@ def test_generate_cert_issuer_eq_subject():
             "L": "Some Locality",
             "S": "Some State",
             "C": "PL"
-        }
+        },
+        datetime.datetime.today() + datetime.timedelta(days=1)
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -200,14 +213,15 @@ def test_generate_cert_issuer_eq_subject():
             ca_key_path,
             dev_cert_path,
             dev_key_path,
-        {
-            "CN": "Some Common Name",
-            "O": "Some Org Name",
-            "OU": "Some OU",
-            "L": "Some Locality",
-            "S": "Some State",
-            "C": "PL"
-        }
+            {
+                "CN": "Some Common Name",
+                "O": "Some Org Name",
+                "OU": "Some OU",
+                "L": "Some Locality",
+                "S": "Some State",
+                "C": "PL"
+            },
+            datetime.datetime.today() + datetime.timedelta(days=1)
         )
     assert not os.path.exists(dev_cert_path)
     assert not os.path.exists(dev_key_path)
