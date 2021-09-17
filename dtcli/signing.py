@@ -44,17 +44,18 @@ def _generate_x509_name(attributes):
     return crypto_x509.Name(names_attributes)
 
 
-def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after):
+def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, passphrase=None):
     print("Generating CA...")
     private_key = rsa.generate_private_key(
         public_exponent=65537, key_size=4096
     )
+    private_key_encryption = serialization.BestAvailableEncryption(passphrase.encode()) if passphrase else serialization.NoEncryption()
     with open(ca_key_file_path, "wb") as fp:
         fp.write(
             private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption(),
+                encryption_algorithm=private_key_encryption
             )
         )
     print("Wrote CA private key: %s" % ca_key_file_path)
@@ -85,12 +86,15 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after):
 
 
 def generate_cert(
-    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject, not_valid_after
+    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject,
+    not_valid_after, ca_passphrase=None, dev_passphrase=None
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(
-            fp.read(), password=None, backend=default_backend()
+            fp.read(),
+            password=ca_passphrase.encode() if ca_passphrase else None,
+            backend=default_backend()
         )
 
     print("Loading CA certificate %s" % ca_cert_file_path)
@@ -105,12 +109,13 @@ def generate_cert(
     private_key = rsa.generate_private_key(
         public_exponent=65537, key_size=4096
     )
+    private_key_encryption = serialization.BestAvailableEncryption(dev_passphrase.encode()) if dev_passphrase else serialization.NoEncryption()
     with open(dev_key_file_path, "wb") as fp:
         fp.write(
             private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption(),
+                encryption_algorithm=private_key_encryption,
             )
         )
     public_key = private_key.public_key()
@@ -138,6 +143,7 @@ def sign_file(
     signature_file_path,
     certificate_file_path,
     private_key_file_path,
+    dev_passphrase=None
 ):
     print(
         "Signing %s using %s certificate and %s private key"
@@ -145,7 +151,9 @@ def sign_file(
     )
     with open(private_key_file_path, "rb") as fp:
         private_key = serialization.load_pem_private_key(
-            fp.read(), password=None, backend=default_backend()
+            fp.read(),
+            password=dev_passphrase.encode() if dev_passphrase else None,
+            backend=default_backend()
         )
     sha256 = hashes.SHA256()
     hasher = hashes.Hash(sha256)

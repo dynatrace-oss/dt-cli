@@ -45,13 +45,26 @@ def validate_parse_subject(ctx, param, value):
     except ValueError:
         raise click.BadParameter(f"format must be '/key0=value0/key1=value1/...' got: '{value}'")
 
+def edit_other_option_if_true(ctx, param, value, other_name, edit_callback):
+    if not value:
+        return
+    for p in ctx.command.params:
+        if isinstance(p, click.Option) and p.name == other_name:
+            edit_callback(p)
 
-def _genca(ca_cert_path, ca_key_path, force, subject, days_valid):
+
+def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase):
     if force:
         print("Forced generation option used. Already existing CA certificate files will be overwritten.")
         check_file_exists(ca_cert_path, KeyGenerationError)
         check_file_exists(ca_key_path, KeyGenerationError)
-        signing.generate_ca(ca_cert_path, ca_key_path, subject, datetime.datetime.today() + datetime.timedelta(days=days_valid))
+        signing.generate_ca(
+            ca_cert_path,
+            ca_key_path,
+            subject,
+            datetime.datetime.today() + datetime.timedelta(days=days_valid),
+            ca_passphrase
+        )
         return
 
     if (
@@ -62,10 +75,18 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid):
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
         )
 
-    signing.generate_ca(ca_cert_path, ca_key_path, subject, datetime.datetime.today() + datetime.timedelta(days=days_valid))
+    signing.generate_ca(
+        ca_cert_path,
+        ca_key_path,
+        subject,
+        datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        ca_passphrase
+    )
 
 
-def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid):
+def _gendevcert(
+    ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid, ca_passphrase, dev_passphrase
+):
     require_file_exists(ca_cert_path)
     require_file_exists(ca_key_path)
     require_is_not_dir(dev_cert_path)
@@ -80,7 +101,9 @@ def _gendevcert(ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject,
         dev_cert_path,
         dev_key_path,
         subject,
-        datetime.datetime.today() + datetime.timedelta(days=days_valid)
+        datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        ca_passphrase,
+        dev_passphrase
     )
 
 
@@ -122,17 +145,25 @@ def extension_dev():
     "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
 )
 @click.option(
-    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
+    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True, help="Certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
 @click.option(
-    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
-    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+    "--ca-passphrase", type=str, prompt="CA private key passphrase", confirmation_prompt=True, hide_input=True, default="",
+    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty"
+)
+@click.option(
+    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
+)
+@click.option(
+    "--force", is_flag=True, help="Overwrites already existing CA key and certificate"
 )
 @click.option(
     "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
 )
 def genca(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
 
 
 
@@ -146,10 +177,26 @@ def genca(**kwargs):
     "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key input path"
 )
 @click.option(
+    "--ca-passphrase", type=str, prompt="CA private key passphrase", hide_input=True, default="",
+    help="Passphrase used for CA private key encryption"
+)
+@click.option(
+    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
+)
+@click.option(
     "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
 )
 @click.option(
     "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
+)
+@click.option(
+    "--dev-passphrase", type=str, prompt="Developer private key passphrase", confirmation_prompt=True, hide_input=True, default="",
+    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty"
+)
+@click.option(
+    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
 )
 @click.option(
     "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
@@ -159,7 +206,16 @@ def genca(**kwargs):
     "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
 )
 def gendevcert(**kwargs):
-    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"], kwargs["days_valid"])
+    _gendevcert(
+        kwargs["ca_cert"],
+        kwargs["ca_key"],
+        kwargs["dev_cert"],
+        kwargs["dev_key"],
+        kwargs["dev_subject"],
+        kwargs["days_valid"],
+        kwargs["ca_passphrase"],
+        kwargs["dev_passphrase"]
+    )
 
 
 
@@ -173,17 +229,33 @@ def gendevcert(**kwargs):
     "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
 )
 @click.option(
+    "--ca-passphrase", type=str, prompt="CA private key passphrase", confirmation_prompt=True, hide_input=True, default="",
+    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty"
+)
+@click.option(
+    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
+)
+@click.option(
+    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+)
+@click.option(
+    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
+)
+@click.option(
     "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
 )
 @click.option(
     "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
 )
 @click.option(
-    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
+    "--dev-passphrase", type=str, prompt="Developer private key passphrase", confirmation_prompt=True, hide_input=True, default="",
+    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty"
 )
 @click.option(
-    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
-    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
 )
 @click.option(
     "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
@@ -193,8 +265,17 @@ def gendevcert(**kwargs):
     "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
 )
 def gencerts(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"])
-    _gendevcert(kwargs["ca_cert"], kwargs["ca_key"], kwargs["dev_cert"], kwargs["dev_key"], kwargs["dev_subject"], kwargs["days_valid"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
+    _gendevcert(
+        kwargs["ca_cert"],
+        kwargs["ca_key"],
+        kwargs["dev_cert"],
+        kwargs["dev_key"],
+        kwargs["dev_subject"],
+        kwargs["days_valid"],
+        kwargs["ca_passphrase"],
+        kwargs["dev_passphrase"]
+    )
 
 
 
@@ -220,6 +301,14 @@ def gencerts(**kwargs):
     "--private-key",
     default=DEFAULT_DEV_KEY, show_default=True,
     help="Developer private key used for signing",
+)
+@click.option(
+    "--dev-passphrase", type=str, prompt="Developer private key passphrase", hide_input=True, default="",
+    help="Passphrase used for developer private key encryption"
+)
+@click.option(
+    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase",
+    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
 )
 @click.option(
     "--keep-intermediate-files",
@@ -256,6 +345,7 @@ def build(**kwargs):
         target_dir_path,
         certificate_file_path,
         private_key_file_path,
+        kwargs['dev_passphrase'],
         kwargs["keep_intermediate_files"],
     )
 

@@ -26,7 +26,7 @@ def test_generate_ca():
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
     not_valid_after = datetime.datetime.today().replace(microsecond=0) + datetime.timedelta(days=123)
-
+    passphrase = "secretpassphrase"
     signing.generate_ca(
         cert_path,
         key_path,
@@ -38,7 +38,8 @@ def test_generate_ca():
             "S": "Some State",
             "C": "PL"
         },
-        not_valid_after
+        not_valid_after,
+        passphrase
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -63,7 +64,7 @@ def test_generate_ca():
     assert ca_cert.not_valid_after == not_valid_after
 
     with open(key_path, "rb") as fp:
-        ca_private_key = serialization.load_pem_private_key(fp.read(), password=None)
+        ca_private_key = serialization.load_pem_private_key(fp.read(), password=passphrase.encode())
     assert (
         ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
         ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
@@ -115,6 +116,7 @@ def test_generate_ca_empty_attributes():
 def test_generate_cert():
     ca_cert_path = "test_ca_certificate.crt"
     ca_key_path = "test_ca_key.key"
+    ca_passphrase = "secretcapassphrase"
 
     signing.generate_ca(
         ca_cert_path,
@@ -127,7 +129,8 @@ def test_generate_cert():
             "S": "Some State",
             "C": "PL"
         },
-        datetime.datetime.today() + datetime.timedelta(days=1)
+        datetime.datetime.today() + datetime.timedelta(days=1),
+        ca_passphrase
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -135,6 +138,7 @@ def test_generate_cert():
     dev_cert_path = "test_dev_certificate.crt"
     dev_key_path = "test_dev_key.key"
     not_valid_after = datetime.datetime.today().replace(microsecond=0) + datetime.timedelta(days=123)
+    dev_passphrase = "secretdevpassphrase"
 
     signing.generate_cert(
         ca_cert_path,
@@ -149,7 +153,9 @@ def test_generate_cert():
             "S": "Some State",
             "C": "PL"
         },
-        not_valid_after
+        not_valid_after,
+        ca_passphrase,
+        dev_passphrase
     )
     assert os.path.exists(dev_cert_path)
     assert os.path.exists(dev_key_path)
@@ -174,7 +180,7 @@ def test_generate_cert():
     assert dev_cert.not_valid_after == not_valid_after
 
     with open(dev_key_path, "rb") as fp:
-        dev_private_key = serialization.load_pem_private_key(fp.read(), password=None)
+        dev_private_key = serialization.load_pem_private_key(fp.read(), password=dev_passphrase.encode())
     assert (
         dev_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
         dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
