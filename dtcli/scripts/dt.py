@@ -188,7 +188,7 @@ def gencerts(**kwargs):
 
 
 @extension.command(
-    help=f"Builds extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR})"
+    help=f"Builds extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
 )
 @click.option(
     "--extension-directory",
