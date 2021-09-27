@@ -141,6 +141,8 @@ Bump to the new version using `bump2version` CLI.
 ```shell
 # Where <part> is major (x.0.0), minor (0.x.0), or patch (0.0.x)
 poetry run bump2version patch
+# or
+poetry run bump2version --new-version 1.2.3 <part>
 ```
 
 <a id="development-cycle"></a>
