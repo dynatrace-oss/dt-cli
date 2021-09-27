@@ -1,7 +1,7 @@
 # dt-cli — Dynatrace developer's toolbox
 
-Dynatrace CLI is a command line utility that assists in developing, signing,
-and building extensions for Dynatrace Extension Framework 2.0.
+Dynatrace CLI is a command line utility that assists in signing, building and uploading
+extensions for Dynatrace Extension Framework 2.0.
 
 <p>
   <a href="https://pypi.org/project/dt-cli/"><img alt="PyPI" src="https://img.shields.io/pypi/v/dt-cli?color=blue&logo=python&logoColor=white"></a>
@@ -10,14 +10,12 @@ and building extensions for Dynatrace Extension Framework 2.0.
 </p>
 
 
-`dt-cli` is currently in **ALPHA**. But it's evolving quickly with new
-features for extension development and cluster management to be added soon.
-
 ### Features
 
 * Build and sign extensions from source
 * Generate development certificates for extension signing
 * Generate CA certificates for development
+* Validate and upload extension to Dynatrace Extension Framework 2.0.
 
 ## Installation
 
@@ -27,75 +25,20 @@ pip install dt-cli
 
 ## Usage
 
-Currently there are three basic commands available for working with extensions.
-Extension subcommand has two aliases for convenience: `dt ext` or `dt extensions`.
+1. Generate certificates
+```sh
+  dt extension gencerts
+```
+2. Upload your `ca.pem` certificate to the Dynatrace credential vault
 
-* `dt extension genca`
+See: [Add your root certificate to the Dynatrace credential vault](https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/sign-extension/#add-your-root-certificate-to-the-dynatrace-credential-vault)
 
-  generates CA root certificate and key, required to generate developer certificates
-  and for extension validation. The file containing the certificate (`ca.cert` is
-  the deafult name) needs to be placed on ActiveGates and monitored hosts that will
-  be executing extensions.
-
-  ```shell
-  Usage: dt extension genca [OPTIONS]
-
-    creates CA key and certificate, needed to create developer certificate
-    used for extension signing
-
-    Options:
-    --ca-cert TEXT  CA certificate. Default: ./ca.crt
-    --ca-key TEXT   CA key. Default: ./ca.key
-    -h, --help      Show this message and exit.
-  ```
-
-* `dt extension gendevcert`
-
-  generates a developer certificate used for signing extensions. Please note that
-  there may be multiple developer certificates coming from a single root
-  certificate. It's up to your organization to manage them.
-
-  ```shell
-  Usage: dt extension gendevcert [OPTIONS]
-
-    creates developer key and certificate used for extension signing
-
-    Options:
-    --ca-cert TEXT   CA certificate. Default: ./ca.crt
-    --ca-key TEXT    CA key. Default: ./ca.key
-    --dev-cert TEXT  Developer certificate. Default: ./developer.crt
-    --dev-key TEXT   Developer key. Default: ./developer.key
-    -h, --help       Show this message and exit.
-  ```
-
-* `dt extension build`
-  builds distributable extension file from a given directory containing extension files
-  (`./extension` by default). The extension will be signed with a developer certificate and key.
-
-  ```shell
-  Usage: dt extension build [OPTIONS]
-
-    builds extension file from the given extension directory (extension in
-    current dir. is the default)
-
-    Options:
-    --extension-directory TEXT  Directory where extension files are. Default:
-                                ./extension
-
-    --target-directory TEXT     Directory where extension package should be
-                                written. Default: .
-
-    --certificate TEXT          Certificate used for signing. Default:
-                                ./developer.crt
-
-    --private-key TEXT          Private key used for signing. Default:
-                                ./developer.key
-
-    --keep-intermediate-files   Do not delete the signature and 'extension.zip'
-                                files after building extension archive
-
-    -h, --help                  Show this message and exit.
-  ```
+3. Build and sign, then upload extension
+```sh
+  dt extension build
+  dt extension upload
+```
+Use `dt extension --help` to learn more
 
 
 ## Using dt-cli from your Python code
@@ -115,6 +58,7 @@ building.build_extension(
     target_dir_path = './dist',
     certificate_file_path = './developer.crt',
     private_key_file_path = './developer.key',
+    dev_passphrase=None,
     keep_intermediate_files=False,
 )
 ```
