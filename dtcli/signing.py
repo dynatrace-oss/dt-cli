@@ -68,14 +68,32 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
     builder = builder.serial_number(crypto_x509.random_serial_number())
     builder = builder.public_key(public_key)
     builder = builder.add_extension(
-        crypto_x509.BasicConstraints(ca=True, path_length=None),
+        crypto_x509.BasicConstraints(ca=True, path_length=0),
         critical=False,
     )
-    # TODO add aditional extension fields to be on par with openssl result
-    # https://cryptography.io/en/latest/x509/reference.html#cryptography.x509.AuthorityKeyIdentifier
-    # cryptography.x509.AuthorityKeyIdentifier(
-    # https://cryptography.io/en/latest/x509/reference.html#cryptography.x509.SubjectKeyIdentifier
-    # cryptography.x509.SubjectKeyIdentifier
+    subject_identifier = crypto_x509.SubjectKeyIdentifier.from_public_key(public_key)
+    builder = builder.add_extension(
+        subject_identifier,
+        critical=False,
+    )
+    builder = builder.add_extension(
+        crypto_x509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(subject_identifier),
+        critical=False,
+    )
+    builder = builder.add_extension(
+        crypto_x509.KeyUsage(
+            digital_signature=False,
+            content_commitment=False,
+            key_encipherment=False,
+            data_encipherment=False,
+            key_agreement=False,
+            key_cert_sign=True,
+            crl_sign=False,
+            encipher_only=False,
+            decipher_only=False
+        ),
+        critical=False,
+    )
     certificate = builder.sign(
         private_key=private_key,
         algorithm=hashes.SHA256(),
