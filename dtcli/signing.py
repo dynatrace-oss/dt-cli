@@ -146,6 +146,32 @@ def generate_cert(
     builder = builder.not_valid_after(not_valid_after)
     builder = builder.serial_number(crypto_x509.random_serial_number())
     builder = builder.public_key(public_key)
+    builder = builder.add_extension(
+        crypto_x509.SubjectKeyIdentifier.from_public_key(public_key),
+        critical=False,
+    )
+    try:
+        subject_identifier = ca_cert.extensions.get_extension_for_class(crypto_x509.SubjectKeyIdentifier)
+        builder = builder.add_extension(
+            crypto_x509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(subject_identifier.value),
+            critical=False,
+        )
+    except crypto_x509.ExtensionNotFound:
+        pass
+    builder = builder.add_extension(
+        crypto_x509.KeyUsage(
+            digital_signature=True,
+            content_commitment=False,
+            key_encipherment=False,
+            data_encipherment=False,
+            key_agreement=False,
+            key_cert_sign=False,
+            crl_sign=False,
+            encipher_only=False,
+            decipher_only=False
+        ),
+        critical=False,
+    )
     certificate = builder.sign(
         private_key=ca_private_key,
         algorithm=hashes.SHA256(),
