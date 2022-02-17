@@ -72,7 +72,7 @@ jobs:
 
       - name: Load docker image
         run: |
-          docker load < artifacts/image.tar
+          docker load -i artifacts/image.tar
 
       - name: Authenticate in GitHub docker registry
         run: |
@@ -117,7 +117,7 @@ jobs:
 
       - name: Load docker image
         run: |
-          docker load < artifacts/image.tar
+          docker load -i artifacts/image.tar
 
       - name: Run pytest tests
         run: |
@@ -162,7 +162,7 @@ jobs:
 
       - name: Load docker image
         run: |
-          docker load < artifacts/image.tar
+          docker load -i artifacts/image.tar
 
       - name: Build package
         run: |
@@ -281,7 +281,7 @@ jobs:
 
       - name: Load docker image
         run: |
-          docker load < artifacts/image.tar
+          docker load -i artifacts/image.tar
 
       - name: Download cached built package
         uses: actions/download-artifact@v2
