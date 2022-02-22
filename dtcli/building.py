@@ -100,9 +100,9 @@ def build_extension(
     target_dir_path,
     certificate_file_path,
     private_key_file_path,
-    is_rsa,
     dev_passphrase=None,
     keep_intermediate_files=False,
+    is_rsa=False
 ):
     try:
         utils.require_dir_exists(extension_dir_path)
@@ -113,8 +113,8 @@ def build_extension(
             extension_zip_sig_path,
             certificate_file_path,
             private_key_file_path,
-            is_rsa,
-            dev_passphrase
+            dev_passphrase,
+            is_rsa
         )
         utils.require_file_exists(extension_zip_path)
         utils.require_file_exists(extension_zip_sig_path)

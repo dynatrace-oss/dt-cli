@@ -44,7 +44,7 @@ def _generate_x509_name(attributes):
     return crypto_x509.Name(names_attributes)
 
 
-def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, is_rsa, passphrase=None):
+def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, passphrase=None, is_rsa=False):
     print("Generating CA...")
     private_key = None
     if is_rsa:
@@ -94,7 +94,7 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, i
 
 def generate_cert(
     ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject,
-    not_valid_after, is_rsa, ca_passphrase=None, dev_passphrase=None
+    not_valid_after, ca_passphrase=None, dev_passphrase=None, is_rsa=False
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
@@ -156,8 +156,8 @@ def sign_file(
     signature_file_path,
     certificate_file_path,
     private_key_file_path,
-    is_rsa,
-    dev_passphrase=None
+    dev_passphrase=None,
+    is_rsa=False
 ):
     print(
         "Signing %s using %s certificate and %s private key"
