@@ -58,7 +58,7 @@ docker build -t dtcli-dev .
 Run it with root of the repo mounted into `/app` directory:
 
 ```shell
-docker run --rm -it -v "$(pwd):/app" bash
+docker run --rm -it -v "$(pwd):/app" dtcli-dev bash
 ```
 
 This will launch an interactive shell into Docker container where you can run all the commands below.
