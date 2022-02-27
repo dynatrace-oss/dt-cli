@@ -406,7 +406,9 @@ def validate(**kwargs):
 def upload(**kwargs):
     extension_zip = kwargs['extension_zip']
     require_file_exists(extension_zip)
-    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'], kwargs["validate"])
+    if kwargs["validate"]:
+        server_api.validate(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
 
 
 
