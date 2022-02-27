@@ -33,7 +33,7 @@ def validate(extension_zip_file, tenant_url, api_token):
             print(f"Extension validation failed!")
             raise dtcliutils.ExtensionValidationError(response.text)
 
-def upload(extension_zip_file, tenant_url, api_token):
+def upload(extension_zip_file, tenant_url, api_token, validate=False):
     url = f"{tenant_url}/api/v2/extensions"
 
     with open(extension_zip_file, "rb") as extzf:
@@ -42,6 +42,9 @@ def upload(extension_zip_file, tenant_url, api_token):
             'Authorization': f'Api-Token {api_token}'
         }
         try:
+            if validate:
+                response = requests.post(url, files={'file': (extension_zip_file, extzf, 'application/zip')}, headers=headers, params={"validateOnly": True})
+                response.raise_for_status()
             response = requests.post(url, files={'file': (extension_zip_file, extzf, 'application/zip')}, headers=headers)
             response.raise_for_status()
             print(f"Extension upload successful!")

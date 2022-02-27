@@ -400,10 +400,13 @@ def validate(**kwargs):
 @click.option(
     "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
 )
+@click.option(
+    "--validate", prompt=True, help="Asks for a validation before uploading the extension", default=False, is_flag=True
+)
 def upload(**kwargs):
     extension_zip = kwargs['extension_zip']
     require_file_exists(extension_zip)
-    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'], kwargs["validate"])
 
 
 
