@@ -368,6 +368,11 @@ def build(**kwargs):
     )
 
 
+def sanitize_url(ctx, param, value):
+    if value.endswith("/"):
+        value = value[:-1]
+    return value
+    
 
 @extension.command(
     help="Validates extension package using Dynatrace Cluster API"
@@ -376,7 +381,7 @@ def build(**kwargs):
     "extension-zip", type=click.Path(exists=True, readable=True)
 )
 @click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
     "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
@@ -395,7 +400,7 @@ def validate(**kwargs):
     "extension-zip", type=click.Path(exists=True, readable=True)
 )
 @click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
     "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."

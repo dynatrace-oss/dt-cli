@@ -34,8 +34,6 @@ def validate(extension_zip_file, tenant_url, api_token):
             raise dtcliutils.ExtensionValidationError(response.text)
 
 def upload(extension_zip_file, tenant_url, api_token):
-    if tenant_url.endswith("/"):
-        tenant_url = tenant_url[:-1]
     url = f"{tenant_url}/api/v2/extensions"
 
     with open(extension_zip_file, "rb") as extzf:
