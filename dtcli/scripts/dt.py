@@ -53,7 +53,7 @@ def edit_other_option_if_true(ctx, param, value, other_name, edit_callback):
             edit_callback(p)
 
 
-def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase, is_rsa):
+def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase):
     if force:
         print("Forced generation option used. Already existing CA certificate files will be overwritten.")
         check_file_exists(ca_cert_path, KeyGenerationError)
@@ -63,8 +63,7 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase,
             ca_key_path,
             subject,
             datetime.datetime.today() + datetime.timedelta(days=days_valid),
-            ca_passphrase,
-            is_rsa
+            ca_passphrase
         )
         return
 
@@ -75,19 +74,18 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase,
         raise KeyGenerationError(
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
         )
-    
+
     signing.generate_ca(
         ca_cert_path,
         ca_key_path,
         subject,
         datetime.datetime.today() + datetime.timedelta(days=days_valid),
-        ca_passphrase,
-        is_rsa
+        ca_passphrase
     )
 
 
 def _gendevcert(
-    ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid, ca_passphrase, dev_passphrase, is_rsa
+    ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid, ca_passphrase, dev_passphrase
 ):
     require_file_exists(ca_cert_path)
     require_file_exists(ca_key_path)
@@ -105,8 +103,7 @@ def _gendevcert(
         subject,
         datetime.datetime.today() + datetime.timedelta(days=days_valid),
         ca_passphrase,
-        dev_passphrase,
-        is_rsa
+        dev_passphrase
     )
 
 
@@ -160,16 +157,13 @@ def extension_dev():
     callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
 )
 @click.option(
-    "--rsa", default=False, is_flag=True, help="Use the RSA algorithm to sign instead of the default algorithm (ECDSA)"
-)
-@click.option(
     "--force", is_flag=True, help="Overwrites already existing CA key and certificate"
 )
 @click.option(
     "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
 )
 def genca(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"], kwargs["rsa"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
 
 
 
@@ -197,9 +191,6 @@ def genca(**kwargs):
     "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
 )
 @click.option(
-    "--rsa", default=False, is_flag=True, help="Use the RSA algorithm to sign instead of the default algorithm (ECDSA)"
-)
-@click.option(
     "--dev-passphrase", type=str, prompt="Developer private key passphrase", confirmation_prompt=True, hide_input=True, default="",
     help="Sets passphrase for developer private key encryption - private key is not encrypted if empty"
 )
@@ -223,8 +214,7 @@ def gendevcert(**kwargs):
         kwargs["dev_subject"],
         kwargs["days_valid"],
         kwargs["ca_passphrase"],
-        kwargs["dev_passphrase"],
-        kwargs["rsa"]
+        kwargs["dev_passphrase"]
     )
 
 
@@ -251,9 +241,6 @@ def gendevcert(**kwargs):
     show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
 )
 @click.option(
-    "--rsa", default=False, is_flag=True, help="Use the RSA algorithm to sign instead of the default algorithm (ECDSA)"
-)
-@click.option(
     "--force", is_flag=True, help="overwrites already existing CA key and certificate"
 )
 @click.option(
@@ -278,7 +265,7 @@ def gendevcert(**kwargs):
     "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
 )
 def gencerts(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"], kwargs["rsa"])
+    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
     _gendevcert(
         kwargs["ca_cert"],
         kwargs["ca_key"],
@@ -287,8 +274,7 @@ def gencerts(**kwargs):
         kwargs["dev_subject"],
         kwargs["days_valid"],
         kwargs["ca_passphrase"],
-        kwargs["dev_passphrase"],
-        kwargs["rsa"]
+        kwargs["dev_passphrase"]
     )
 
 
@@ -315,9 +301,6 @@ def gencerts(**kwargs):
     "--private-key",
     default=DEFAULT_DEV_KEY, show_default=True,
     help="Developer private key used for signing",
-)
-@click.option(
-    "--rsa", default=False, is_flag=True, help="Use the RSA algorithm to sign instead of the default algorithm (ECDSA)"
 )
 @click.option(
     "--dev-passphrase", type=str, prompt="Developer private key passphrase", hide_input=True, default="",
@@ -364,7 +347,6 @@ def build(**kwargs):
         private_key_file_path,
         kwargs['dev_passphrase'],
         kwargs["keep_intermediate_files"],
-        kwargs['rsa']
     )
 
 
