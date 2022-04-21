@@ -23,35 +23,10 @@ from dtcli import signing
 from dtcli import utils
 
 def test_generate_ca():
-    _test_generate_ca()
-
-def test_generate_ca_with_rsa():
-    _test_generate_ca(True)
-
-def test_generate_ca_empty_attributes():
-    _test_generate_ca_empty_attributes()
-
-def test_generate_ca_empty_attributes_with_rsa():
-    _test_generate_ca_empty_attributes(True)
-
-def test_generate_cert():
-    _test_generate_cert()
-
-def test_generate_cert_with_rsa():
-    _test_generate_cert(True)
-
-def test_generate_cert_issuer_eq_subject():
-    _test_generate_cert_issuer_eq_subject()
-
-def test_generate_cert_issuer_eq_subject_with_rsa():
-    _test_generate_cert_issuer_eq_subject(True)
-
-def _test_generate_ca(is_rsa=False):
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
     not_valid_after = datetime.datetime.today().replace(microsecond=0) + datetime.timedelta(days=123)
     passphrase = "secretpassphrase"
-
     signing.generate_ca(
         cert_path,
         key_path,
@@ -64,8 +39,7 @@ def _test_generate_ca(is_rsa=False):
             "C": "PL"
         },
         not_valid_after,
-        passphrase,
-        is_rsa
+        passphrase
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -91,21 +65,15 @@ def _test_generate_ca(is_rsa=False):
 
     with open(key_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(fp.read(), password=passphrase.encode())
-    if is_rsa:
-        assert (
-            ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-            ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-        )
-    else:
-        assert (
-            ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo) ==
-            ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        )
+    assert (
+        ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
+        ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
+    )
 
     os.remove(cert_path)
     os.remove(key_path)
 
-def _test_generate_ca_empty_attributes(is_rsa=False):
+def test_generate_ca_empty_attributes():
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
 
@@ -113,8 +81,7 @@ def _test_generate_ca_empty_attributes(is_rsa=False):
         cert_path,
         key_path,
         {},
-        datetime.datetime.today() + datetime.timedelta(days=1),
-        is_rsa = is_rsa
+        datetime.datetime.today() + datetime.timedelta(days=1)
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -138,21 +105,15 @@ def _test_generate_ca_empty_attributes(is_rsa=False):
 
     with open(key_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(fp.read(), password=None)
-    if is_rsa:
-        assert (
-            ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-            ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-        )
-    else:
-        assert (
-            ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo) ==
-            ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        )
+    assert (
+        ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
+        ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
+    )
 
     os.remove(cert_path)
     os.remove(key_path)
 
-def _test_generate_cert(is_rsa=False):
+def test_generate_cert():
     ca_cert_path = "test_ca_certificate.crt"
     ca_key_path = "test_ca_key.key"
     ca_passphrase = "secretcapassphrase"
@@ -169,8 +130,7 @@ def _test_generate_cert(is_rsa=False):
             "C": "PL"
         },
         datetime.datetime.today() + datetime.timedelta(days=1),
-        ca_passphrase,
-        is_rsa
+        ca_passphrase
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -195,8 +155,7 @@ def _test_generate_cert(is_rsa=False):
         },
         not_valid_after,
         ca_passphrase,
-        dev_passphrase,
-        is_rsa
+        dev_passphrase
     )
     assert os.path.exists(dev_cert_path)
     assert os.path.exists(dev_key_path)
@@ -222,23 +181,17 @@ def _test_generate_cert(is_rsa=False):
 
     with open(dev_key_path, "rb") as fp:
         dev_private_key = serialization.load_pem_private_key(fp.read(), password=dev_passphrase.encode())
-    if is_rsa:
-        assert (
-            dev_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-            dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-        )
-    else:
-        assert (
-            dev_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo) ==
-            dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        )
+    assert (
+        dev_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
+        dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
+    )
 
     os.remove(ca_cert_path)
     os.remove(ca_key_path)
     os.remove(dev_cert_path)
     os.remove(dev_key_path)
 
-def _test_generate_cert_issuer_eq_subject(is_rsa=False):
+def test_generate_cert_issuer_eq_subject():
     ca_cert_path = "test_ca_certificate.crt"
     ca_key_path = "test_ca_key.key"
 
@@ -253,8 +206,7 @@ def _test_generate_cert_issuer_eq_subject(is_rsa=False):
             "S": "Some State",
             "C": "PL"
         },
-        datetime.datetime.today() + datetime.timedelta(days=1),
-        is_rsa = is_rsa
+        datetime.datetime.today() + datetime.timedelta(days=1)
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -275,8 +227,7 @@ def _test_generate_cert_issuer_eq_subject(is_rsa=False):
                 "S": "Some State",
                 "C": "PL"
             },
-            datetime.datetime.today() + datetime.timedelta(days=1),
-            is_rsa = is_rsa
+            datetime.datetime.today() + datetime.timedelta(days=1)
         )
     assert not os.path.exists(dev_cert_path)
     assert not os.path.exists(dev_key_path)

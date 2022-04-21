@@ -18,7 +18,7 @@ from asn1crypto import cms, util, x509, core, pem
 from cryptography import x509 as crypto_x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa, ec, utils
+from cryptography.hazmat.primitives.asymmetric import padding, rsa, utils
 from cryptography.hazmat.backends import default_backend
 
 from . import utils as dtcliutils
@@ -44,18 +44,11 @@ def _generate_x509_name(attributes):
     return crypto_x509.Name(names_attributes)
 
 
-def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, passphrase=None, is_rsa=False):
+def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, passphrase=None):
     print("Generating CA...")
-    private_key = None
-    if is_rsa:
-        private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=4096
-        )
-    else:
-        private_key = ec.generate_private_key(
-            ec.SECP256R1()
-        )
-
+    private_key = rsa.generate_private_key(
+        public_exponent=65537, key_size=4096
+    )
     private_key_encryption = serialization.BestAvailableEncryption(passphrase.encode()) if passphrase else serialization.NoEncryption()
     with open(ca_key_file_path, "wb") as fp:
         fp.write(
@@ -112,7 +105,7 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
 
 def generate_cert(
     ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject,
-    not_valid_after, ca_passphrase=None, dev_passphrase=None, is_rsa=False
+    not_valid_after, ca_passphrase=None, dev_passphrase=None
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
@@ -131,15 +124,9 @@ def generate_cert(
 
 
     print("Generating developer certificate...")
-    private_key = None
-    if is_rsa:
-        private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=4096
-        )
-    else:
-        private_key = ec.generate_private_key(
-            ec.SECP256R1()
-        )        
+    private_key = rsa.generate_private_key(
+        public_exponent=65537, key_size=4096
+    )
     private_key_encryption = serialization.BestAvailableEncryption(dev_passphrase.encode()) if dev_passphrase else serialization.NoEncryption()
     with open(dev_key_file_path, "wb") as fp:
         fp.write(
@@ -200,8 +187,7 @@ def sign_file(
     signature_file_path,
     certificate_file_path,
     private_key_file_path,
-    dev_passphrase=None,
-    is_rsa=False
+    dev_passphrase=None
 ):
     print(
         "Signing %s using %s certificate and %s private key"
@@ -220,15 +206,9 @@ def sign_file(
         while len(buf) > 0:
             hasher.update(buf)
             buf = fp.read(CHUNK_SIZE)
-    signature = None
-    if is_rsa:
-        signature = private_key.sign(
-            hasher.finalize(), padding.PKCS1v15(), utils.Prehashed(sha256)
-        )
-    else:
-        signature = private_key.sign(
-            hasher.finalize(), ec.ECDSA(hashes.SHA256())
-        )
+    signature = private_key.sign(
+        hasher.finalize(), padding.PKCS1v15(), utils.Prehashed(sha256)
+    )
     signed_data = cms.SignedData()
     signed_data["version"] = "v1"
     signed_data["encap_content_info"] = util.OrderedDict(
@@ -257,9 +237,8 @@ def sign_file(
     signer_info["digest_algorithm"] = util.OrderedDict(
         [("algorithm", "sha256"), ("parameters", None)]
     )
-
     signer_info["signature_algorithm"] = util.OrderedDict(
-        [("algorithm", "rsassa_pkcs1v15" if is_rsa else "ecdsa")]
+        [("algorithm", "rsassa_pkcs1v15"), ("parameters", core.Null)]
     )
     signer_info["signature"] = signature
     signer_info["sid"] = cms.SignerIdentifier(
