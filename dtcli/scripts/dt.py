@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
+import sys
+sys.path.append(os.getcwd())
 import click
 import datetime
 import re
@@ -21,7 +23,7 @@ from click_aliases import ClickAliasedGroup
 from dtcli.constants import *
 from dtcli.utils import *
 
-from dtcli import building
+from dtcli import building, delete_extension, api
 from dtcli import signing
 from dtcli import __version__
 from dtcli import dev
@@ -386,6 +388,45 @@ def upload(**kwargs):
     extension_zip = kwargs['extension_zip']
     require_file_exists(extension_zip)
     server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+
+
+
+@extension.command(
+    help="Downloads all schemas from choosen version"
+)
+@click.option(
+    "--version", prompt=True, help="Schema Version e.g. 1.235"
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@click.option(
+    "--api-token",  prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+)
+@click.option(
+    "--download-dir",
+    default=DEFAULT_DOWNLOAD_DIR, show_default=True,
+    help="Directory where folder schemas will be created with all downloaded files",
+)
+def schemas(**kwargs):
+    dt = api.DynatraceAPIClient.from_tenant_url(kwargs['tenant_url'], kwargs['api_token'])
+    dt.download_schemas(kwargs['version'], kwargs['download_dir'])
+
+
+@extension.command(
+    help="Wipe out extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
+)
+@click.option(
+    "--extension", prompt=True, help="Extension name e.g., custom:com.dynatrace.extension.extension-name"
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@click.option(
+    "--api-token",  prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+)
+def wipe(**kwargs):
+    delete_extension.wipe(fqdn=kwargs['extension'], tenant=kwargs['tenant_url'], token=kwargs['api_token'])
 
 
 
