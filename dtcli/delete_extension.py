@@ -114,7 +114,6 @@ def wipe(fqdn: str, tenant: str, token: str):
     wipe_extension(client, state, fqdn)
 
 def state(tenant: str, token: str):
-    token = token
     # client = DynatraceAPIClient.from_dev_tenant(tenant, secrets)
     client = DynatraceAPIClient.from_tenant_url(tenant, token)
     state = acquire_state(client)
