@@ -106,7 +106,6 @@ def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
     wipe_extension_version(client, state, fqdn, version)
 
 def wipe(fqdn: str, tenant: str, token: str):
-    token = token
     # TODO: move client creation further up the chain
     # client = DynatraceAPIClient.from_dev_tenant(tenant, secrets)
     client = DynatraceAPIClient.from_tenant_url(tenant, token)
