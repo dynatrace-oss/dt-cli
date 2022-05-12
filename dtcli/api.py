@@ -80,8 +80,7 @@ class DynatraceAPIClient:
         if matches:
             return matches[0]
 
-        print(f"Target version {target_version} does not exist. \nAvailable versions: {versions}")
-        raise SystemExit
+        raise SystemExit(f"Target version {target_version} does not exist. \nAvailable versions: {versions}")
 
     def download_schemas(self, target_version: str, download_dir: str):
         """Downloads schemas from choosen version"""
@@ -90,8 +89,6 @@ class DynatraceAPIClient:
 
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
-
-        # print(f"Downloading schemas for version {version}")
 
         files = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=self.headers).json().get("files", [])
         for file in files:

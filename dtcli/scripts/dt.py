@@ -33,12 +33,14 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 def token_load(token_path: str):
+    if not os.path.exists(token_path):
+        return False
     with open(token_path) as f:
         try:
             token = f.readlines()[0].rstrip()
         except IndexError:
             print("Token file is empty")
-            return 1
+            return False
     return token
 
 def validate_parse_subject(ctx, param, value):
@@ -411,9 +413,13 @@ def upload(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
+    "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+                                     "If using token from file, type 'file'."
+)
+@click.option(
     "--token-path",
     default=DEFAULT_TOKEN_PATH, show_default=True,
-    help="Directory where token file can be found",
+    help="Directory where token file can be found. Please note that token needs to have the 'Write extension' scope enabled.",
 )
 @click.option(
     "--download-dir",
@@ -421,9 +427,16 @@ def upload(**kwargs):
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
-    token = token_load(kwargs['token_path'])
+    if kwargs['api_token'] != "file":
+        token = kwargs['api_token']
+    elif token_load(kwargs['token_path']):
+        token = token_load(kwargs['token_path'])
+    else:
+        token = os.getenv('TOKEN')
+
     dt = api.DynatraceAPIClient(kwargs['tenant_url'], token=token)
-    dt.download_schemas(kwargs['version'], kwargs['download_dir'])
+    version = dt.download_schemas(kwargs['version'], kwargs['download_dir'])
+    print(f"Downloading schemas for version {version}")
 
 
 @extension.command(
