@@ -31,6 +31,16 @@ from dtcli import server_api
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
+
+def token_load(token_path: str):
+    with open(token_path) as f:
+        try:
+            token = f.readlines()[0].rstrip()
+        except IndexError:
+            print("Token file is empty")
+            return 1
+    return token
+
 def validate_parse_subject(ctx, param, value):
     if value is None:
         return None
@@ -401,7 +411,9 @@ def upload(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
-    "--api-token",  prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+    "--token-path",
+    default=DEFAULT_TOKEN_PATH, show_default=True,
+    help="Directory where token file can be found",
 )
 @click.option(
     "--download-dir",
@@ -409,12 +421,13 @@ def upload(**kwargs):
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
-    dt = api.DynatraceAPIClient.from_tenant_url(kwargs['tenant_url'], kwargs['api_token'])
+    token = token_load(kwargs['token_path'])
+    dt = api.DynatraceAPIClient(kwargs['tenant_url'], token=token)
     dt.download_schemas(kwargs['version'], kwargs['download_dir'])
 
 
 @extension.command(
-    help="Wipe out extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
+    help="Delete extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
 )
 @click.option(
     "--extension", prompt=True, help="Extension name e.g., custom:com.dynatrace.extension.extension-name"
@@ -423,10 +436,13 @@ def schemas(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
-    "--api-token",  prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+    "--token-path",
+    default=DEFAULT_TOKEN_PATH, show_default=True,
+    help="Directory where token file can be found",
 )
-def wipe(**kwargs):
-    delete_extension.wipe(fqdn=kwargs['extension'], tenant=kwargs['tenant_url'], token=kwargs['api_token'])
+def delete(**kwargs):
+    token = token_load(kwargs['token_path'])
+    delete_extension.wipe(fqdn=kwargs['extension'], tenant=kwargs['tenant_url'], token=token)
 
 
 

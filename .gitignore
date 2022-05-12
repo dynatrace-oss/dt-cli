@@ -25,8 +25,9 @@ extension/
 *.key
 *.crt
 
-# Schemas
+# Other directories
 schemas/
+secrets/
 
 # Git
 .gitconfig

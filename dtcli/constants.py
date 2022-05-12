@@ -26,3 +26,4 @@ DEFAULT_CA_CERT = os.path.join(os.path.curdir, "ca.pem")
 DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
 DEFAULT_CERT_VALIDITY = 365 * 3
 DEFAULT_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
+DEFAULT_TOKEN_PATH = "./secrets/token"

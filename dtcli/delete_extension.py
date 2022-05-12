@@ -4,8 +4,6 @@ from typing import Dict, Set, Optional, List
 from pathlib import Path
 
 
-# from src.api import DynatraceAPIClient
-# from api import DynatraceAPIClient
 from dtcli.api import DynatraceAPIClient
 
 class State:
@@ -98,8 +96,7 @@ def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
     with open(token_path) as f:
         token = f.readlines()[0].rstrip()
 
-    # client = DynatraceAPIClient.from_dev_tenant(tenant, secrets)
-    client = DynatraceAPIClient.from_tenant_url(tenant, token)
+    client = DynatraceAPIClient(tenant, token)
     state = acquire_state(client)
     print(state)
 
@@ -107,15 +104,13 @@ def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
 
 def wipe(fqdn: str, tenant: str, token: str):
     # TODO: move client creation further up the chain
-    # client = DynatraceAPIClient.from_dev_tenant(tenant, secrets)
-    client = DynatraceAPIClient.from_tenant_url(tenant, token)
+    client = DynatraceAPIClient(tenant, token)
     state = acquire_state(client)
 
     wipe_extension(client, state, fqdn)
 
 def state(tenant: str, token: str):
-    # client = DynatraceAPIClient.from_dev_tenant(tenant, secrets)
-    client = DynatraceAPIClient.from_tenant_url(tenant, token)
+    client = DynatraceAPIClient(tenant, token)
     state = acquire_state(client)
     print(json.dumps(state.as_dict()))
 
