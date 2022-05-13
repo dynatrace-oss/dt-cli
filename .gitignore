@@ -25,8 +25,10 @@ extension/
 *.key
 *.crt
 
-# Other directories
+# Downloaded schemas
 schemas/
+
+# Secrets
 secrets/
 
 # Git

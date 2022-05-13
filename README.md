@@ -52,7 +52,7 @@ This script should only be needed once, whenever schema files are missing or you
 
 5. Wipes out extension from Dynatrace Cluster
 ```sh
-  dt extension wipe
+  dt extension delete
 ```
 Use `dt extension --help` to learn more
 

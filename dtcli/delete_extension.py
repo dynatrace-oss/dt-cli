@@ -55,6 +55,29 @@ def acquire_state(client: DynatraceAPIClient) -> State:
     s = State(extensions)
     return s
 
+def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> State:
+    extensions_listing = list(map(lambda e: e["extensionName"], client.acquire_extensions()))
+
+    if extension not in extensions_listing:
+        raise Exception("Extension doesn't exist")
+
+    versions = client.acquire_extension_versions(extension)
+    extension_data = defaultdict(dict)
+    for e in versions:
+        name, version = e["extensionName"], e["version"]
+        extension_data[name][version] = {"monitoring_configurations": []}
+
+    environment_configuration = client.acquire_environment_configuration(extension)
+    monitoring_configurations = client.acquire_monitoring_configurations(extension)
+
+    if environment_configuration:
+        extension_data[extension][environment_configuration["version"]]["environment_configuration"] = environment_configuration
+        for mc in monitoring_configurations:
+            extension_data[extension][mc["value"]["version"]]["monitoring_configurations"].append(mc)
+
+    state = State(extension_data)
+    return state
+
 def wipe_extension_version(client, state, extension_fqdn: str, version: str):
     assert extension_fqdn in state
     if version not in state[extension_fqdn]:
@@ -84,7 +107,7 @@ def wipe_extension(client, state, extension_fqdn: str):
         # need to do this as environment configuration can be assigned to any extension version
         # TODO: refactor this to first delete the extension with environment configuration and don't regenerate state!
         wipe_extension_version(client, state, extension_fqdn, version)
-        state = acquire_state(client)
+        # state = acquire_state_for_extension(client)
 
 
 # TODO: split arguments that will be usefull with all commands (tenant, secrets)
@@ -105,12 +128,6 @@ def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
 def wipe(fqdn: str, tenant: str, token: str):
     # TODO: move client creation further up the chain
     client = DynatraceAPIClient(tenant, token)
-    state = acquire_state(client)
+    state = acquire_state_for_extension(client, fqdn)
 
     wipe_extension(client, state, fqdn)
-
-def state(tenant: str, token: str):
-    client = DynatraceAPIClient(tenant, token)
-    state = acquire_state(client)
-    print(json.dumps(state.as_dict()))
-
