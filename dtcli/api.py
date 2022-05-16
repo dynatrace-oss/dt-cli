@@ -94,8 +94,34 @@ class DynatraceAPIClient:
         header = self.headers
         header["accept"] = "application/octet-stream"
         file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
-        z = zipfile.ZipFile(io.BytesIO(file.content))
-        z.extractall(download_dir)
+        zfile = zipfile.ZipFile(io.BytesIO(file.content))
+
+        THRESHOLD_ENTRIES = 10000
+        THRESHOLD_SIZE = 1000000000
+        THRESHOLD_RATIO = 10
+
+        totalSizeArchive = 0
+        totalEntryArchive = 0
+
+        for zinfo in zfile.infolist():
+            data = zfile.read(zinfo)
+            totalEntryArchive += 1
+            totalSizeArchive = totalSizeArchive + len(data)
+            ratio = len(data) / zinfo.compress_size
+            if ratio > THRESHOLD_RATIO:
+                # ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
+                break
+
+            if totalSizeArchive > THRESHOLD_SIZE:
+                # the uncompressed data size is too much for the application resource capacity
+                break
+
+            if totalEntryArchive > THRESHOLD_ENTRIES:
+                # too much entries in this archive, can lead to inodes exhaustion of the system
+                break
+
+        zfile.extractall(download_dir)
+        zfile.close()
 
         return version
 

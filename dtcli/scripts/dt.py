@@ -438,7 +438,7 @@ def upload(**kwargs):
 @token_path
 @click.option(
     "--download-dir",
-    default=DEFAULT_DOWNLOAD_DIR, show_default=True,
+    default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
