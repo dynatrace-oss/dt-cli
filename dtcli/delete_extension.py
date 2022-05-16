@@ -103,11 +103,14 @@ def wipe_extension(client, state, extension_fqdn: str):
     if extension_fqdn not in state:
         return
 
-    for version in state[extension_fqdn]:
-        # need to do this as environment configuration can be assigned to any extension version
-        # TODO: refactor this to first delete the extension with environment configuration and don't regenerate state!
+    env_conf_ver = client.acquire_environment_configuration(extension_fqdn)["version"]
+    versions = [v for v in state[extension_fqdn]]
+
+    wipe_extension_version(client, state, extension_fqdn, env_conf_ver)
+    versions.remove(env_conf_ver)
+
+    for version in versions:
         wipe_extension_version(client, state, extension_fqdn, version)
-        # state = acquire_state_for_extension(client)
 
 
 # TODO: split arguments that will be usefull with all commands (tenant, secrets)
