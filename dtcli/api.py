@@ -109,16 +109,13 @@ class DynatraceAPIClient:
             totalSizeArchive = totalSizeArchive + len(data)
             ratio = len(data) / zinfo.compress_size
             if ratio > THRESHOLD_RATIO:
-                # ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
-                break
+                raise Exception("ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack")
 
             if totalSizeArchive > THRESHOLD_SIZE:
-                # the uncompressed data size is too much for the application resource capacity
-                break
+                raise Exception("the uncompressed data size is too much for the application resource capacity")
 
             if totalEntryArchive > THRESHOLD_ENTRIES:
-                # too much entries in this archive, can lead to inodes exhaustion of the system
-                break
+                raise Exception("too much entries in this archive, can lead to inodes exhaustion of the system")
 
         zfile.extractall(download_dir)
         zfile.close()
