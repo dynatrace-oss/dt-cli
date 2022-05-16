@@ -1,6 +1,7 @@
 import json
 import os
 import requests as _requests_impl
+import zipfile, io
 
 # TODO: support pagination
 
@@ -90,11 +91,11 @@ class DynatraceAPIClient:
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
 
-        files = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=self.headers).json().get("files", [])
-        for file in files:
-            schema = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}/{file}", headers=self.headers).json()
-            with open(file=f"{download_dir}/{file}", mode="w") as f:
-                json.dump(schema, f, indent=2)
+        header = self.headers
+        header["accept"] = "application/octet-stream"
+        file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
+        z = zipfile.ZipFile(io.BytesIO(file.content))
+        z.extractall(download_dir)
 
         return version
 
