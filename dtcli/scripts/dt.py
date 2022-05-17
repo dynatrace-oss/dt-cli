@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
+import sys
+sys.path.append(os.getcwd())
 import click
 import datetime
 import re
@@ -21,13 +23,36 @@ from click_aliases import ClickAliasedGroup
 from dtcli.constants import *
 from dtcli.utils import *
 
-from dtcli import building
+from dtcli import building, delete_extension, api
 from dtcli import signing
 from dtcli import __version__
 from dtcli import dev
 from dtcli import server_api
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
+def token_load(api_token: str, token_path: str):
+    if api_token == "prompt":
+        token = input("Api token: ").rstrip()
+        return token
+    elif api_token == "file":
+        if not os.path.exists(token_path):
+            raise Exception("File doesn't exist")
+        with open(token_path) as f:
+            try:
+                token = f.readlines()[0].rstrip()
+            except IndexError:
+                raise Exception("Token file is empty")
+        return token
+    elif api_token == "env":
+        if not "DTCLI_API_TOKEN" in os.environ:
+            raise Exception("Token not found in environment variables")
+        token = os.getenv("DTCLI_API_TOKEN")
+        return token
+    else:
+        raise Exception("No token provided")
+
 
 def validate_parse_subject(ctx, param, value):
     if value is None:
@@ -107,6 +132,17 @@ def _gendevcert(
     )
 
 
+api_token = click.option("--api-token", prompt=True, type=click.Choice(["prompt","file","env"], case_sensitive=False),
+                         help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+                              "| prompt - prompt token in terminal "
+                              "| file - load token from file (path to file should be passed in --token-path "
+                              "| env - load token from environment variables"
+                         )
+
+token_path = click.option("--token-path", default=DEFAULT_TOKEN_PATH, show_default=True,
+                          type=click.Path(exists=False, file_okay=True, readable=True),
+                           help="Path to file where token can be found."
+                           )
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
 @click.version_option(version=__version__)
@@ -345,7 +381,7 @@ def build(**kwargs):
         target_dir_path,
         certificate_file_path,
         private_key_file_path,
-        kwargs['dev_passphrase'],
+        kwargs["dev_passphrase"],
         kwargs["keep_intermediate_files"],
     )
 
@@ -364,9 +400,9 @@ def build(**kwargs):
     "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
 )
 def validate(**kwargs):
-    extension_zip = kwargs['extension_zip']
+    extension_zip = kwargs["extension_zip"]
     require_file_exists(extension_zip)
-    server_api.validate(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+    server_api.validate(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
 
@@ -383,9 +419,49 @@ def validate(**kwargs):
     "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
 )
 def upload(**kwargs):
-    extension_zip = kwargs['extension_zip']
+    extension_zip = kwargs["extension_zip"]
     require_file_exists(extension_zip)
-    server_api.upload(extension_zip, kwargs['tenant_url'], kwargs['api_token'])
+    server_api.upload(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
+
+
+
+@extension.command(
+    help="Downloads all schemas from choosen version"
+)
+@click.option(
+    "--version", prompt=True, help="Schema Version e.g. 1.235"
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+@token_path
+@click.option(
+    "--download-dir",
+    default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
+    help="Directory where folder schemas will be created with all downloaded files",
+)
+def schemas(**kwargs):
+    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
+    version = dt.download_schemas(kwargs["version"], kwargs["download_dir"])
+    print(f"Downloaded schemas for version {version}")
+
+
+@extension.command(
+    help="Delete extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
+)
+@click.option(
+    "--extension", prompt=True, help="Extension name e.g., custom:com.dynatrace.extension.extension-name"
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+@token_path
+def delete(**kwargs):
+    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
 
 
 
