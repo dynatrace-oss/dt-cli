@@ -72,7 +72,9 @@ class DynatraceAPIClient:
 
     def get_schema_target_version(self, target_version: str):
         """Get version number from tenant. If version doesn't exist return list of available versions."""
-        versions = self.requests.get(self.url_base + "/api/v2/extensions/schemas", headers=self.headers).json().get("versions", [])
+        r = self.requests.get(self.url_base + "/api/v2/extensions/schemas", headers=self.headers)
+        r.raise_for_status()
+        versions = r.json().get("versions", [])
 
         if target_version == "latest":
             return versions[-1]
