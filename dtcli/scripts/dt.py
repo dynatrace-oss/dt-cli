@@ -424,6 +424,28 @@ def upload(**kwargs):
     server_api.upload(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
+@extension.command(
+    help="Downloads alert from choosen id"
+)
+@click.option(
+    "--alert-id", prompt=True, help="Alert id"
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+@token_path
+@click.option(
+    "--download-dir",
+    default=DEFAULT_ALERTS_DOWNLOAD_DIR, show_default=True,
+    help="Directory where folder alert will be created with all downloaded files",
+)
+def alert(**kwargs):
+    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
+    alert_name = dt.acquire_alert(kwargs["alert_id"], kwargs["download_dir"])
+    print(f"Downloaded alert: {alert_name}")
+
 
 @extension.command(
     help="Downloads all schemas from choosen version"

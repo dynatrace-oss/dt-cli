@@ -11,6 +11,21 @@ class DynatraceAPIClient:
         self.headers = {"Authorization": f"Api-Token {token}"}
         self.requests = requests if requests is not None else _requests_impl
 
+    def acquire_alert(self, alert_id: str, download_dir: str):
+        r = self.requests.get(self.url_base + f"/api/config/v1/anomalyDetection/metricEvents/" + alert_id, headers=self.headers)
+        r.raise_for_status()
+        alert = r.json()
+        alert_name = alert["name"]
+
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir)
+
+        json_alert = json.dumps(alert, indent=4)
+        with open(f"./{download_dir}/{alert_name}.json", 'w') as f:
+            f.write(json_alert)
+
+        return alert_name
+
     def acquire_monitoring_configurations(self, fqdn: str):
         r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations", headers=self.headers)
         r.raise_for_status()
@@ -72,7 +87,9 @@ class DynatraceAPIClient:
 
     def get_schema_target_version(self, target_version: str):
         """Get version number from tenant. If version doesn't exist return list of available versions."""
-        versions = self.requests.get(self.url_base + "/api/v2/extensions/schemas", headers=self.headers).json().get("versions", [])
+        r = self.requests.get(self.url_base + "/api/v2/extensions/schemas", headers=self.headers)
+        r.raise_for_status()
+        versions = r.json().get("versions", [])
 
         if target_version == "latest":
             return versions[-1]
@@ -94,6 +111,7 @@ class DynatraceAPIClient:
         header = self.headers
         header["accept"] = "application/octet-stream"
         file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
+        file.raise_for_status()
         zfile = zipfile.ZipFile(io.BytesIO(file.content))
 
         THRESHOLD_ENTRIES = 10000

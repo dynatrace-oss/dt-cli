@@ -25,7 +25,8 @@ extension/
 *.key
 *.crt
 
-# Downloaded schemas
+# Downloaded files
+alerts/
 schemas/
 
 # Secrets
