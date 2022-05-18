@@ -433,7 +433,12 @@ def upload(**kwargs):
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
-@api_token
+@click.option("--api-token", prompt=True, type=click.Choice(["prompt","file","env"], case_sensitive=False),
+                         help="Dynatrace API token. Please note that token needs to have the 'API v1 scopes Read and Write Configuration' enabled."
+                              "| prompt - prompt token in terminal "
+                              "| file - load token from file (path to file should be passed in --token-path "
+                              "| env - load token from environment variables"
+                         )
 @token_path
 @click.option(
     "--download-dir",
