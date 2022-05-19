@@ -16,6 +16,7 @@ import datetime
 import re
 
 from click_aliases import ClickAliasedGroup
+import pathlib
 
 from dtcli.constants import *
 from dtcli.utils import *
@@ -27,28 +28,6 @@ from dtcli import dev
 from dtcli import server_api
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
-
-
-def token_load(api_token: str, token_path: str):
-    if api_token == "prompt":
-        token = input("Api token: ").rstrip()
-        return token
-    elif api_token == "file":
-        if not os.path.exists(token_path):
-            raise Exception("File doesn't exist")
-        with open(token_path) as f:
-            try:
-                token = f.readlines()[0].rstrip()
-            except IndexError:
-                raise Exception("Token file is empty")
-        return token
-    elif api_token == "env":
-        if not "DTCLI_API_TOKEN" in os.environ:
-            raise Exception("Token not found in environment variables")
-        token = os.getenv("DTCLI_API_TOKEN")
-        return token
-    else:
-        raise Exception("No token provided")
 
 
 def validate_parse_subject(ctx, param, value):
@@ -128,18 +107,27 @@ def _gendevcert(
         dev_passphrase
     )
 
+def token_load(ctx, param, value):
+    try:
+        if value == '-':
+            value = DEFAULT_TOKEN_PATH
 
-api_token = click.option("--api-token", prompt=True, type=click.Choice(["prompt","file","env"], case_sensitive=False),
-                         help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
-                              "| prompt - prompt token in terminal "
-                              "| file - load token from file (path to file should be passed in --token-path "
-                              "| env - load token from environment variables"
-                         )
+        with open(value) as f:
+            try:
+                token = f.readlines()[0].rstrip()
+            except IndexError:
+                raise Exception("Token file is empty")
+        return token
+    except FileNotFoundError:
+        token = os.getenv("DTCLI_API_TOKEN")
+        return token
 
-token_path = click.option("--token-path", default=DEFAULT_TOKEN_PATH, show_default=True,
-                          type=click.Path(exists=False, file_okay=True, readable=True),
-                           help="Path to file where token can be found."
-                           )
+
+api_token = click.option("--api-token", type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+              default="-", show_default=False,
+              callback=token_load
+              ) # Walk around for token read from env if no file is provided
+
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
 @click.version_option(version=__version__)
@@ -422,6 +410,7 @@ def upload(**kwargs):
 
 
 
+
 @extension.command(
     help="Downloads all schemas from choosen version"
 )
@@ -432,14 +421,13 @@ def upload(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
-@token_path
 @click.option(
     "--download-dir",
     default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
-    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    token = kwargs["api_token"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
     version = dt.download_schemas(kwargs["version"], kwargs["download_dir"])
     print(f"Downloaded schemas for version {version}")
@@ -455,9 +443,8 @@ def schemas(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
-@token_path
 def delete(**kwargs):
-    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    token = kwargs["api_token"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
 
 
