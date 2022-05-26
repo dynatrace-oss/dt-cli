@@ -108,6 +108,12 @@ def _gendevcert(
     )
 
 def token_load(ctx, param, value):
+    """
+    Function load token to application. First it checks if path is passed as argument. If not it takes
+    default token localization defined in constants.py as DEFAULT_TOKEN_PATH, else gets token from file
+    passed as argument. If file with token doesn't exist it checks if virtual variable DTCLI_API_TOKEN
+    exist and returns token if so or error if not.
+    """
     try:
         if value == '-':
             value = DEFAULT_TOKEN_PATH
@@ -116,17 +122,19 @@ def token_load(ctx, param, value):
             try:
                 token = f.readlines()[0].rstrip()
             except IndexError:
-                raise Exception("Token file is empty")
+                raise click.BadArgumentUsage("Token file exist but is empty. No token applied.")
         return token
     except FileNotFoundError:
         token = os.getenv("DTCLI_API_TOKEN")
+        if token is None:
+            raise click.UsageError("Virtual environment DTCLI_API_TOKEN doesn't exist. No token applied.")
         return token
 
-
-api_token = click.option("--api-token", type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
-              default="-", show_default=False,
-              callback=token_load
-              ) # Walk around for token read from env if no file is provided
+# Walk around for token read from env if no file is provided, by default "-" gets token from default file location
+# if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
+api_token = click.argument("api-token", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+                           default="-", callback=token_load
+                           )
 
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
@@ -412,10 +420,10 @@ def upload(**kwargs):
 
 
 @extension.command(
-    help="Downloads all schemas from choosen version"
+    help="Downloads all schemas from choosen version e.g. 1.235"
 )
-@click.option(
-    "--version", prompt=True, help="Schema Version e.g. 1.235"
+@click.argument(
+    "version", nargs=1
 )
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
@@ -434,10 +442,10 @@ def schemas(**kwargs):
 
 
 @extension.command(
-    help="Delete extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
+    help="Delete extension from Dynatrace Cluster, Extension e.g. custom:com.dynatrace.extension.extension-name"
 )
-@click.option(
-    "--extension", prompt=True, help="Extension name e.g., custom:com.dynatrace.extension.extension-name"
+@click.argument(
+    "extension", nargs=1
 )
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
