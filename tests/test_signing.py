@@ -22,6 +22,7 @@ from cryptography.x509.oid import NameOID
 from dtcli import signing
 from dtcli import utils
 
+
 def test_generate_ca():
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
@@ -36,10 +37,10 @@ def test_generate_ca():
             "OU": "Some OU",
             "L": "Some Locality",
             "S": "Some State",
-            "C": "PL"
+            "C": "PL",
         },
         not_valid_after,
-        passphrase
+        passphrase,
     )
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
@@ -65,24 +66,19 @@ def test_generate_ca():
 
     with open(key_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(fp.read(), password=passphrase.encode())
-    assert (
-        ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-        ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-    )
+    assert ca_cert.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.PKCS1
+    ) == ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
 
     os.remove(cert_path)
     os.remove(key_path)
+
 
 def test_generate_ca_empty_attributes():
     cert_path = "test_ca_certificate.crt"
     key_path = "test_ca_key.key"
 
-    signing.generate_ca(
-        cert_path,
-        key_path,
-        {},
-        datetime.datetime.today() + datetime.timedelta(days=1)
-    )
+    signing.generate_ca(cert_path, key_path, {}, datetime.datetime.today() + datetime.timedelta(days=1))
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
 
@@ -105,13 +101,13 @@ def test_generate_ca_empty_attributes():
 
     with open(key_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(fp.read(), password=None)
-    assert (
-        ca_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-        ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-    )
+    assert ca_cert.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.PKCS1
+    ) == ca_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
 
     os.remove(cert_path)
     os.remove(key_path)
+
 
 def test_generate_cert():
     ca_cert_path = "test_ca_certificate.crt"
@@ -127,10 +123,10 @@ def test_generate_cert():
             "OU": "Some OU",
             "L": "Some Locality",
             "S": "Some State",
-            "C": "PL"
+            "C": "PL",
         },
         datetime.datetime.today() + datetime.timedelta(days=1),
-        ca_passphrase
+        ca_passphrase,
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -151,11 +147,11 @@ def test_generate_cert():
             "OU": "Some Other OU",
             "L": "Some Locality",
             "S": "Some State",
-            "C": "PL"
+            "C": "PL",
         },
         not_valid_after,
         ca_passphrase,
-        dev_passphrase
+        dev_passphrase,
     )
     assert os.path.exists(dev_cert_path)
     assert os.path.exists(dev_key_path)
@@ -181,15 +177,15 @@ def test_generate_cert():
 
     with open(dev_key_path, "rb") as fp:
         dev_private_key = serialization.load_pem_private_key(fp.read(), password=dev_passphrase.encode())
-    assert (
-        dev_cert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1) ==
-        dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
-    )
+    assert dev_cert.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.PKCS1
+    ) == dev_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.PKCS1)
 
     os.remove(ca_cert_path)
     os.remove(ca_key_path)
     os.remove(dev_cert_path)
     os.remove(dev_key_path)
+
 
 def test_generate_cert_issuer_eq_subject():
     ca_cert_path = "test_ca_certificate.crt"
@@ -204,9 +200,9 @@ def test_generate_cert_issuer_eq_subject():
             "OU": "Some OU",
             "L": "Some Locality",
             "S": "Some State",
-            "C": "PL"
+            "C": "PL",
         },
-        datetime.datetime.today() + datetime.timedelta(days=1)
+        datetime.datetime.today() + datetime.timedelta(days=1),
     )
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
@@ -225,9 +221,9 @@ def test_generate_cert_issuer_eq_subject():
                 "OU": "Some OU",
                 "L": "Some Locality",
                 "S": "Some State",
-                "C": "PL"
+                "C": "PL",
             },
-            datetime.datetime.today() + datetime.timedelta(days=1)
+            datetime.datetime.today() + datetime.timedelta(days=1),
         )
     assert not os.path.exists(dev_cert_path)
     assert not os.path.exists(dev_key_path)
