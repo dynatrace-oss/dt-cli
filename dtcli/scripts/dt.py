@@ -130,9 +130,9 @@ def token_load(ctx, param, value):
             raise click.UsageError("Virtual environment DTCLI_API_TOKEN doesn't exist. No token applied.")
         return token
 
-# Walk around for token read from env if no file is provided, by default "-" gets token from default file location
-# if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
-api_token = click.argument("api-token", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+# Walk around for token read from env if no file is provided, by default value is "-" and gets token from default file
+# location if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
+api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
                            default="-", callback=token_load
                            )
 
@@ -435,7 +435,7 @@ def upload(**kwargs):
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
-    token = kwargs["api_token"]
+    token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
     version = dt.download_schemas(kwargs["version"], kwargs["download_dir"])
     print(f"Downloaded schemas for version {version}")
@@ -452,7 +452,7 @@ def schemas(**kwargs):
 )
 @api_token
 def delete(**kwargs):
-    token = kwargs["api_token"]
+    token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
 
 
