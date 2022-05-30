@@ -11,17 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import click
 import datetime
 import re
 
 from click_aliases import ClickAliasedGroup
+import pathlib
 
 from dtcli.constants import *
 from dtcli.utils import *
 
-from dtcli import building
+from dtcli import building, delete_extension, api
 from dtcli import signing
 from dtcli import __version__
 from dtcli import dev
@@ -109,6 +109,34 @@ def _gendevcert(
         dev_passphrase,
     )
 
+def token_load(ctx, param, value):
+    """
+    Function load token to application. First it checks if path is passed as argument. If not it takes
+    default token localization defined in constants.py as DEFAULT_TOKEN_PATH, else gets token from file
+    passed as argument. If file with token doesn't exist it checks if virtual variable DTCLI_API_TOKEN
+    exist and returns token if so or error if not.
+    """
+    try:
+        if value == '-':
+            value = DEFAULT_TOKEN_PATH
+
+        with open(value) as f:
+            try:
+                token = f.readlines()[0].rstrip()
+            except IndexError:
+                raise click.BadArgumentUsage("Token file exist but is empty. No token applied.")
+        return token
+    except FileNotFoundError:
+        token = os.getenv("DTCLI_API_TOKEN")
+        if token is None:
+            raise click.UsageError("Virtual environment DTCLI_API_TOKEN doesn't exist. No token applied.")
+        return token
+
+# Walk around for token read from env if no file is provided, by default value is "-" and gets token from default file
+# location if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
+api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+                           default="-", callback=token_load
+                           )
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
 @click.version_option(version=__version__)
@@ -459,6 +487,47 @@ def upload(**kwargs):
     extension_zip = kwargs["extension_zip"]
     require_file_exists(extension_zip)
     server_api.upload(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
+
+
+
+
+@extension.command(
+    help="Downloads all schemas from choosen version e.g. 1.235"
+)
+@click.argument(
+    "version", nargs=1
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+@click.option(
+    "--download-dir",
+    default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
+    help="Directory where folder schemas will be created with all downloaded files",
+)
+def schemas(**kwargs):
+    token = kwargs["api_token_path"]
+    dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
+    version = dt.download_schemas(kwargs["version"], kwargs["download_dir"])
+    print(f"Downloaded schemas for version {version}")
+
+
+@extension.command(
+    help="Delete extension from Dynatrace Cluster, Extension e.g. custom:com.dynatrace.extension.extension-name"
+)
+@click.argument(
+    "extension", nargs=1
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+def delete(**kwargs):
+    token = kwargs["api_token_path"]
+    delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
+
+
 
 
 @extension_dev.command(

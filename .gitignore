@@ -9,6 +9,12 @@ extension/
 *.key
 *.crt
 
+# Downloaded schemas
+schemas/
+
+# Secrets
+secrets/
+
 # Git
 .gitconfig
 

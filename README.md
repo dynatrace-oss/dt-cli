@@ -40,6 +40,22 @@ See: [Add your root certificate to the Dynatrace credential vault](https://www.d
 ```
 Use `dt extension --help` to learn more
 
+4. Download extension schemas
+```sh
+  dt extension schemas
+```
+_API permissions needed: `extensions.read`_
+
+This script should only be needed once, whenever schema files are missing or you want to target a different version than what you already have. It does the following:
+* Downloads all the extension schema files of a specific version
+* Schemas are downloaded to `schemas` folder
+
+5. Wipes out extension from Dynatrace Cluster
+```sh
+  dt extension delete
+```
+Use `dt extension --help` to learn more
+
 
 ## Using dt-cli from your Python code
 
