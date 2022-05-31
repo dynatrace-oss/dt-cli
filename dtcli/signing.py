@@ -1,11 +1,11 @@
 # Copyright 2021 Dynatrace LLC
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,9 @@ X509NameAttributes = {
     "OU": NameOID.ORGANIZATIONAL_UNIT_NAME,
     "L": NameOID.LOCALITY_NAME,
     "S": NameOID.STATE_OR_PROVINCE_NAME,
-    "C": NameOID.COUNTRY_NAME
+    "C": NameOID.COUNTRY_NAME,
 }
+
 
 def _generate_x509_name(attributes):
     names_attributes = []
@@ -46,16 +47,16 @@ def _generate_x509_name(attributes):
 
 def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, passphrase=None):
     print("Generating CA...")
-    private_key = rsa.generate_private_key(
-        public_exponent=65537, key_size=4096
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
+    private_key_encryption = (
+        serialization.BestAvailableEncryption(passphrase.encode()) if passphrase else serialization.NoEncryption()
     )
-    private_key_encryption = serialization.BestAvailableEncryption(passphrase.encode()) if passphrase else serialization.NoEncryption()
     with open(ca_key_file_path, "wb") as fp:
         fp.write(
             private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=private_key_encryption
+                encryption_algorithm=private_key_encryption,
             )
         )
     print("Wrote CA private key: %s" % ca_key_file_path)
@@ -90,7 +91,7 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
             key_cert_sign=True,
             crl_sign=False,
             encipher_only=False,
-            decipher_only=False
+            decipher_only=False,
         ),
         critical=False,
     )
@@ -104,15 +105,19 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
 
 
 def generate_cert(
-    ca_cert_file_path, ca_key_file_path, dev_cert_file_path, dev_key_file_path, subject,
-    not_valid_after, ca_passphrase=None, dev_passphrase=None
+    ca_cert_file_path,
+    ca_key_file_path,
+    dev_cert_file_path,
+    dev_key_file_path,
+    subject,
+    not_valid_after,
+    ca_passphrase=None,
+    dev_passphrase=None,
 ):
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(
-            fp.read(),
-            password=ca_passphrase.encode() if ca_passphrase else None,
-            backend=default_backend()
+            fp.read(), password=ca_passphrase.encode() if ca_passphrase else None, backend=default_backend()
         )
 
     print("Loading CA certificate %s" % ca_cert_file_path)
@@ -122,12 +127,13 @@ def generate_cert(
     if ca_cert.issuer == subject_name:
         raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
 
-
     print("Generating developer certificate...")
-    private_key = rsa.generate_private_key(
-        public_exponent=65537, key_size=4096
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
+    private_key_encryption = (
+        serialization.BestAvailableEncryption(dev_passphrase.encode())
+        if dev_passphrase
+        else serialization.NoEncryption()
     )
-    private_key_encryption = serialization.BestAvailableEncryption(dev_passphrase.encode()) if dev_passphrase else serialization.NoEncryption()
     with open(dev_key_file_path, "wb") as fp:
         fp.write(
             private_key.private_bytes(
@@ -168,7 +174,7 @@ def generate_cert(
             key_cert_sign=False,
             crl_sign=False,
             encipher_only=False,
-            decipher_only=False
+            decipher_only=False,
         ),
         critical=False,
     )
@@ -182,22 +188,13 @@ def generate_cert(
     print("Wrote developer certificate: %s" % dev_cert_file_path)
 
 
-def sign_file(
-    file_path,
-    signature_file_path,
-    certificate_file_path,
-    private_key_file_path,
-    dev_passphrase=None
-):
+def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None):
     print(
-        "Signing %s using %s certificate and %s private key"
-        % (file_path, certificate_file_path, private_key_file_path)
+        "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path, private_key_file_path)
     )
     with open(private_key_file_path, "rb") as fp:
         private_key = serialization.load_pem_private_key(
-            fp.read(),
-            password=dev_passphrase.encode() if dev_passphrase else None,
-            backend=default_backend()
+            fp.read(), password=dev_passphrase.encode() if dev_passphrase else None, backend=default_backend()
         )
     sha256 = hashes.SHA256()
     hasher = hashes.Hash(sha256)
@@ -206,17 +203,11 @@ def sign_file(
         while len(buf) > 0:
             hasher.update(buf)
             buf = fp.read(CHUNK_SIZE)
-    signature = private_key.sign(
-        hasher.finalize(), padding.PKCS1v15(), utils.Prehashed(sha256)
-    )
+    signature = private_key.sign(hasher.finalize(), padding.PKCS1v15(), utils.Prehashed(sha256))
     signed_data = cms.SignedData()
     signed_data["version"] = "v1"
-    signed_data["encap_content_info"] = util.OrderedDict(
-        [("content_type", "data"), ("content", None)]
-    )
-    signed_data["digest_algorithms"] = [
-        util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])
-    ]
+    signed_data["encap_content_info"] = util.OrderedDict([("content_type", "data"), ("content", None)])
+    signed_data["digest_algorithms"] = [util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])]
 
     with open(certificate_file_path, "rb") as fp:
         der_bytes = fp.read()
@@ -234,12 +225,8 @@ def sign_file(
 
     signer_info = cms.SignerInfo()
     signer_info["version"] = 1
-    signer_info["digest_algorithm"] = util.OrderedDict(
-        [("algorithm", "sha256"), ("parameters", None)]
-    )
-    signer_info["signature_algorithm"] = util.OrderedDict(
-        [("algorithm", "rsassa_pkcs1v15"), ("parameters", core.Null)]
-    )
+    signer_info["digest_algorithm"] = util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])
+    signer_info["signature_algorithm"] = util.OrderedDict([("algorithm", "rsassa_pkcs1v15"), ("parameters", core.Null)])
     signer_info["signature"] = signature
     signer_info["sid"] = cms.SignerIdentifier(
         {

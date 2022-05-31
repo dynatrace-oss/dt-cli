@@ -15,12 +15,14 @@
 import pytest
 from dtcli import utils
 
+
 def test_require_extension_name_valid():
     utils.require_extension_name_valid("custom:e")
     utils.require_extension_name_valid("custom:some.test.ext")
     utils.require_extension_name_valid("custom:some_simple.test.ext-1")
     utils.require_extension_name_valid("custom:_some_simple_test_extension")
     utils.require_extension_name_valid("custom:-some-simple.test.ext_1_")
+
 
 def test_require_extension_name_valid_negative():
     with pytest.raises(utils.ExtensionBuildError):

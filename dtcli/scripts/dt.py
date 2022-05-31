@@ -1,24 +1,22 @@
 # Copyright 2021 Dynatrace LLC
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import sys
-sys.path.append(os.getcwd())
 import click
 import datetime
 import re
 
 from click_aliases import ClickAliasedGroup
+import pathlib
 
 from dtcli.constants import *
 from dtcli.utils import *
@@ -32,43 +30,24 @@ from dtcli import server_api
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-def token_load(api_token: str, token_path: str):
-    if api_token == "prompt":
-        token = input("Api token: ").rstrip()
-        return token
-    elif api_token == "file":
-        if not os.path.exists(token_path):
-            raise Exception("File doesn't exist")
-        with open(token_path) as f:
-            try:
-                token = f.readlines()[0].rstrip()
-            except IndexError:
-                raise Exception("Token file is empty")
-        return token
-    elif api_token == "env":
-        if not "DTCLI_API_TOKEN" in os.environ:
-            raise Exception("Token not found in environment variables")
-        token = os.getenv("DTCLI_API_TOKEN")
-        return token
-    else:
-        raise Exception("No token provided")
-
-
 def validate_parse_subject(ctx, param, value):
     if value is None:
         return None
 
     def split_pair_and_verify_key(pair):
-        key, val = pair.replace("\\", "").split('=')
+        key, val = pair.replace("\\", "").split("=")
         if key not in signing.X509NameAttributes:
-            raise click.BadParameter(f"subject attributes must be one of {list(signing.X509NameAttributes)}. Got '{key}' instead.")
+            raise click.BadParameter(
+                f"subject attributes must be one of {list(signing.X509NameAttributes)}. Got '{key}' instead."
+            )
         return key, val
 
     try:
-        return(dict(map(split_pair_and_verify_key, filter(None, re.split(r"(?<!\\)\/", value)))))
+        return dict(map(split_pair_and_verify_key, filter(None, re.split(r"(?<!\\)\/", value))))
         return value
     except ValueError:
         raise click.BadParameter(f"format must be '/key0=value0/key1=value1/...' got: '{value}'")
+
 
 def edit_other_option_if_true(ctx, param, value, other_name, edit_callback):
     if not value:
@@ -88,13 +67,12 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
             ca_key_path,
             subject,
             datetime.datetime.today() + datetime.timedelta(days=days_valid),
-            ca_passphrase
+            ca_passphrase,
         )
         return
 
-    if (
-        check_file_exists(ca_cert_path, KeyGenerationError, warn_overwrite=False) and
-        check_file_exists(ca_key_path, KeyGenerationError, warn_overwrite=False)
+    if check_file_exists(ca_cert_path, KeyGenerationError, warn_overwrite=False) and check_file_exists(
+        ca_key_path, KeyGenerationError, warn_overwrite=False
     ):
         raise KeyGenerationError(
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
@@ -105,7 +83,7 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
         ca_key_path,
         subject,
         datetime.datetime.today() + datetime.timedelta(days=days_valid),
-        ca_passphrase
+        ca_passphrase,
     )
 
 
@@ -128,20 +106,36 @@ def _gendevcert(
         subject,
         datetime.datetime.today() + datetime.timedelta(days=days_valid),
         ca_passphrase,
-        dev_passphrase
+        dev_passphrase,
     )
 
+def token_load(ctx, param, value):
+    """
+    Function load token to application. First it checks if path is passed as argument. If not it takes
+    default token localization defined in constants.py as DEFAULT_TOKEN_PATH, else gets token from file
+    passed as argument. If file with token doesn't exist it checks if virtual variable DTCLI_API_TOKEN
+    exist and returns token if so or error if not.
+    """
+    try:
+        if value == '-':
+            value = DEFAULT_TOKEN_PATH
 
-api_token = click.option("--api-token", prompt=True, type=click.Choice(["prompt","file","env"], case_sensitive=False),
-                         help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
-                              "| prompt - prompt token in terminal "
-                              "| file - load token from file (path to file should be passed in --token-path "
-                              "| env - load token from environment variables"
-                         )
+        with open(value) as f:
+            try:
+                token = f.readlines()[0].rstrip()
+            except IndexError:
+                raise click.BadArgumentUsage("Token file exist but is empty. No token applied.")
+        return token
+    except FileNotFoundError:
+        token = os.getenv("DTCLI_API_TOKEN")
+        if token is None:
+            raise click.UsageError("Virtual environment DTCLI_API_TOKEN doesn't exist. No token applied.")
+        return token
 
-token_path = click.option("--token-path", default=DEFAULT_TOKEN_PATH, show_default=True,
-                          type=click.Path(exists=False, file_okay=True, readable=True),
-                           help="Path to file where token can be found."
+# Walk around for token read from env if no file is provided, by default value is "-" and gets token from default file
+# location if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
+api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+                           default="-", callback=token_load
                            )
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
@@ -174,72 +168,108 @@ def extension_dev():
 @extension.command(
     help="Creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
+@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
+@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
-    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
+    "--ca-subject",
+    callback=validate_parse_subject,
+    default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True,
+    help="Certificate subject. Accepted format is /key0=value0/key1=value1/...",
 )
 @click.option(
-    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
+    "--ca-passphrase",
+    type=str,
+    prompt="CA private key passphrase",
+    confirmation_prompt=True,
+    hide_input=True,
+    default="",
+    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty",
 )
 @click.option(
-    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
-    show_default=True, help="Certificate subject. Accepted format is /key0=value0/key1=value1/..."
+    "--no-ca-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
 )
+@click.option("--force", is_flag=True, help="Overwrites already existing CA key and certificate")
 @click.option(
-    "--ca-passphrase", type=str, prompt="CA private key passphrase", confirmation_prompt=True, hide_input=True, default="",
-    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty"
-)
-@click.option(
-    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
-)
-@click.option(
-    "--force", is_flag=True, help="Overwrites already existing CA key and certificate"
-)
-@click.option(
-    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+    "--days-valid",
+    default=DEFAULT_CERT_VALIDITY,
+    show_default=True,
+    type=int,
+    help="Number of days certificate will be valid",
 )
 def genca(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
+    _genca(
+        kwargs["ca_cert"],
+        kwargs["ca_key"],
+        kwargs["force"],
+        kwargs["ca_subject"],
+        kwargs["days_valid"],
+        kwargs["ca_passphrase"],
+    )
 
 
-
-@extension.command(
-    help="Creates developer key and certificate used for extension signing"
+@extension.command(help="Creates developer key and certificate used for extension signing")
+@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate input path")
+@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key input path")
+@click.option(
+    "--ca-passphrase",
+    type=str,
+    prompt="CA private key passphrase",
+    hide_input=True,
+    default="",
+    help="Passphrase used for CA private key encryption",
 )
 @click.option(
-    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate input path"
+    "--no-ca-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for CA private key encryption passphrase",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
+)
+@click.option("--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
+@click.option("--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
+@click.option(
+    "--dev-passphrase",
+    type=str,
+    prompt="Developer private key passphrase",
+    confirmation_prompt=True,
+    hide_input=True,
+    default="",
+    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty",
 )
 @click.option(
-    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key input path"
+    "--no-dev-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
 )
 @click.option(
-    "--ca-passphrase", type=str, prompt="CA private key passphrase", hide_input=True, default="",
-    help="Passphrase used for CA private key encryption"
+    "--dev-subject",
+    callback=validate_parse_subject,
+    default="/CN=Some Developer/O=Some Company/OU=Extension Development",
+    show_default=True,
+    help="certificate subject. Accepted format is /key0=value0/key1=value1/...",
 )
 @click.option(
-    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
-)
-@click.option(
-    "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
-)
-@click.option(
-    "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
-)
-@click.option(
-    "--dev-passphrase", type=str, prompt="Developer private key passphrase", confirmation_prompt=True, hide_input=True, default="",
-    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty"
-)
-@click.option(
-    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
-)
-@click.option(
-    "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
-    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
-)
-@click.option(
-    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+    "--days-valid",
+    default=DEFAULT_CERT_VALIDITY,
+    show_default=True,
+    type=int,
+    help="Number of days certificate will be valid",
 )
 def gendevcert(**kwargs):
     _gendevcert(
@@ -250,58 +280,86 @@ def gendevcert(**kwargs):
         kwargs["dev_subject"],
         kwargs["days_valid"],
         kwargs["ca_passphrase"],
-        kwargs["dev_passphrase"]
+        kwargs["dev_passphrase"],
     )
-
 
 
 @extension.command(
     help="Creates CA key, CA certificate, developer key and developer certificate used for extension signing"
 )
+@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
+@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
-    "--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path"
+    "--ca-passphrase",
+    type=str,
+    prompt="CA private key passphrase",
+    confirmation_prompt=True,
+    hide_input=True,
+    default="",
+    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty",
 )
 @click.option(
-    "--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path"
+    "--no-ca-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
 )
 @click.option(
-    "--ca-passphrase", type=str, prompt="CA private key passphrase", confirmation_prompt=True, hide_input=True, default="",
-    help="Sets passphrase for CA private key encryption - private key is not encrypted if empty"
+    "--ca-subject",
+    callback=validate_parse_subject,
+    default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
+    show_default=True,
+    help="certificate subject. Accepted format is /key0=value0/key1=value1/...",
+)
+@click.option("--force", is_flag=True, help="overwrites already existing CA key and certificate")
+@click.option("--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
+@click.option("--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
+@click.option(
+    "--dev-passphrase",
+    type=str,
+    prompt="Developer private key passphrase",
+    confirmation_prompt=True,
+    hide_input=True,
+    default="",
+    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty",
 )
 @click.option(
-    "--no-ca-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "ca_passphrase", lambda param: setattr(param, 'prompt', None))
+    "--no-dev-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
 )
 @click.option(
-    "--ca-subject", callback=validate_parse_subject, default="/CN=Default Extension CA/O=Some Company/OU=Extension CA",
-    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
+    "--dev-subject",
+    callback=validate_parse_subject,
+    default="/CN=Some Developer/O=Some Company/OU=Extension Development",
+    show_default=True,
+    help="certificate subject. Accepted format is /key0=value0/key1=value1/...",
 )
 @click.option(
-    "--force", is_flag=True, help="overwrites already existing CA key and certificate"
-)
-@click.option(
-    "--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path"
-)
-@click.option(
-    "--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path"
-)
-@click.option(
-    "--dev-passphrase", type=str, prompt="Developer private key passphrase", confirmation_prompt=True, hide_input=True, default="",
-    help="Sets passphrase for developer private key encryption - private key is not encrypted if empty"
-)
-@click.option(
-    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
-)
-@click.option(
-    "--dev-subject", callback=validate_parse_subject, default="/CN=Some Developer/O=Some Company/OU=Extension Development",
-    show_default=True, help="certificate subject. Accepted format is /key0=value0/key1=value1/..."
-)
-@click.option(
-    "--days-valid", default=DEFAULT_CERT_VALIDITY, show_default=True, type=int, help="Number of days certificate will be valid"
+    "--days-valid",
+    default=DEFAULT_CERT_VALIDITY,
+    show_default=True,
+    type=int,
+    help="Number of days certificate will be valid",
 )
 def gencerts(**kwargs):
-    _genca(kwargs["ca_cert"], kwargs["ca_key"], kwargs["force"], kwargs["ca_subject"], kwargs["days_valid"], kwargs["ca_passphrase"])
+    _genca(
+        kwargs["ca_cert"],
+        kwargs["ca_key"],
+        kwargs["force"],
+        kwargs["ca_subject"],
+        kwargs["days_valid"],
+        kwargs["ca_passphrase"],
+    )
     _gendevcert(
         kwargs["ca_cert"],
         kwargs["ca_key"],
@@ -310,9 +368,8 @@ def gencerts(**kwargs):
         kwargs["dev_subject"],
         kwargs["days_valid"],
         kwargs["ca_passphrase"],
-        kwargs["dev_passphrase"]
+        kwargs["dev_passphrase"],
     )
-
 
 
 @extension.command(
@@ -320,31 +377,45 @@ def gencerts(**kwargs):
 )
 @click.option(
     "--extension-directory",
-    default=DEFAULT_EXTENSION_DIR, show_default=True,
+    default=DEFAULT_EXTENSION_DIR,
+    show_default=True,
     help="Directory where the `extension.yaml' and other extension files are located",
 )
 @click.option(
     "--target-directory",
-    default=DEFAULT_TARGET_PATH, show_default=True,
+    default=DEFAULT_TARGET_PATH,
+    show_default=True,
     help="Directory where extension package should be written",
 )
 @click.option(
     "--certificate",
-    default=DEFAULT_DEV_CERT, show_default=True,
+    default=DEFAULT_DEV_CERT,
+    show_default=True,
     help="Developer certificate used for signing",
 )
 @click.option(
     "--private-key",
-    default=DEFAULT_DEV_KEY, show_default=True,
+    default=DEFAULT_DEV_KEY,
+    show_default=True,
     help="Developer private key used for signing",
 )
 @click.option(
-    "--dev-passphrase", type=str, prompt="Developer private key passphrase", hide_input=True, default="",
-    help="Passphrase used for developer private key encryption"
+    "--dev-passphrase",
+    type=str,
+    prompt="Developer private key passphrase",
+    hide_input=True,
+    default="",
+    help="Passphrase used for developer private key encryption",
 )
 @click.option(
-    "--no-dev-passphrase", default=False, is_flag=True, is_eager=True, help="Skips prompt for developer private key encryption passphrase",
-    callback=lambda c, p, v: edit_other_option_if_true(c, p, v, "dev_passphrase", lambda param: setattr(param, 'prompt', None))
+    "--no-dev-passphrase",
+    default=False,
+    is_flag=True,
+    is_eager=True,
+    help="Skips prompt for developer private key encryption passphrase",
+    callback=lambda c, p, v: edit_other_option_if_true(
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+    ),
 )
 @click.option(
     "--keep-intermediate-files",
@@ -386,18 +457,15 @@ def build(**kwargs):
     )
 
 
-
-@extension.command(
-    help="Validates extension package using Dynatrace Cluster API"
-)
-@click.argument(
-    "extension-zip", type=click.Path(exists=True, readable=True)
-)
+@extension.command(help="Validates extension package using Dynatrace Cluster API")
+@click.argument("extension-zip", type=click.Path(exists=True, readable=True))
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
-    "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+    "--api-token",
+    prompt=True,
+    help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled.",
 )
 def validate(**kwargs):
     extension_zip = kwargs["extension_zip"]
@@ -405,18 +473,15 @@ def validate(**kwargs):
     server_api.validate(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
-
-@extension.command(
-    help="Uploads extension package to the Dynatrace Cluster"
-)
-@click.argument(
-    "extension-zip", type=click.Path(exists=True, readable=True)
-)
+@extension.command(help="Uploads extension package to the Dynatrace Cluster")
+@click.argument("extension-zip", type=click.Path(exists=True, readable=True))
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
-    "--api-token", prompt=True, help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled."
+    "--api-token",
+    prompt=True,
+    help="Dynatrace API token. Please note that token needs to have the 'Write extension' scope enabled.",
 )
 def upload(**kwargs):
     extension_zip = kwargs["extension_zip"]
@@ -452,43 +517,43 @@ def alert(**kwargs):
     print(f"Downloaded alert: {alert_name}")
 
 
+
 @extension.command(
-    help="Downloads all schemas from choosen version"
+    help="Downloads all schemas from choosen version e.g. 1.235"
 )
-@click.option(
-    "--version", prompt=True, help="Schema Version e.g. 1.235"
+@click.argument(
+    "version", nargs=1
 )
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
-@token_path
 @click.option(
     "--download-dir",
     default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
     help="Directory where folder schemas will be created with all downloaded files",
 )
 def schemas(**kwargs):
-    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
     version = dt.download_schemas(kwargs["version"], kwargs["download_dir"])
     print(f"Downloaded schemas for version {version}")
 
 
 @extension.command(
-    help="Delete extension from Dynatrace Cluster e.g., custom:com.dynatrace.extension.extension-name"
+    help="Delete extension from Dynatrace Cluster, Extension e.g. custom:com.dynatrace.extension.extension-name"
 )
-@click.option(
-    "--extension", prompt=True, help="Extension name e.g., custom:com.dynatrace.extension.extension-name"
+@click.argument(
+    "extension", nargs=1
 )
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
-@token_path
 def delete(**kwargs):
-    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
+
 
 
 
@@ -498,25 +563,19 @@ def delete(**kwargs):
 @click.argument(
     "path-to-setup-py",
 )
-@click.option(
-    "--additional-libraries-dir",
-    default=None,
-    help="Path to folder containing additional directories"
-)
+@click.option("--additional-libraries-dir", default=None, help="Path to folder containing additional directories")
 @click.option(
     "--extension-directory",
     default=DEFAULT_EXTENSION_DIR,
-    help="Directory where extension files are. Default: "
-    + DEFAULT_EXTENSION_DIR,
+    help="Directory where extension files are. Default: " + DEFAULT_EXTENSION_DIR,
 )
 def prepare_python(path_to_setup_py, **kwargs):
     additional_libraries_dir = kwargs.get("additional_libraries_dir", None)
     extension_directory = kwargs["extension_directory"]
 
     return dev.pack_python_extension(
-        setup_path=path_to_setup_py,
-        target_path=extension_directory,
-        additional_path=additional_libraries_dir)
+        setup_path=path_to_setup_py, target_path=extension_directory, additional_path=additional_libraries_dir
+    )
 
 
 if __name__ == "__main__":

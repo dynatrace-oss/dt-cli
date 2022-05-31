@@ -1,11 +1,11 @@
 # Copyright 2021 Dynatrace LLC
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,11 +19,14 @@ import re
 class ExtensionBuildError(Exception):
     pass
 
+
 class ExtensionValidationError(Exception):
     pass
 
+
 class KeyGenerationError(Exception):
     pass
+
 
 def require_extension_name_valid(extension_name):
     extension_name_regex = re.compile("^custom:(?!\\.)(?!.*\\.\\.)(?!.*\\.$)[a-z0-9-_\\.]+$")
@@ -35,6 +38,7 @@ def require_extension_name_valid(extension_name):
             "https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/extension-yaml/#start-extension-yaml-file"
         )
         raise ExtensionBuildError()
+
 
 def check_file_exists(file_path, exception_cls=ExtensionBuildError, warn_overwrite=True):
     """Returns True and prints a message if file under given path exists and is a real file.
