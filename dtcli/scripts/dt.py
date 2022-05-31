@@ -490,32 +490,25 @@ def upload(**kwargs):
 
 
 @extension.command(
-    help="Downloads alert from choosen id"
+    help="Download alert from choosen id (E|<id>). Token - API v1 scopes Read and Write Configuration."
 )
-@click.option(
-    "--alert-id", prompt=True, help="Alert id"
+@click.argument(
+    "alert-id", nargs=1
 )
 @click.option(
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
-@click.option("--api-token", prompt=True, type=click.Choice(["prompt","file","env"], case_sensitive=False),
-                         help="Dynatrace API token. Please note that token needs to have the 'API v1 scopes Read and Write Configuration' enabled."
-                              "| prompt - prompt token in terminal "
-                              "| file - load token from file (path to file should be passed in --token-path "
-                              "| env - load token from environment variables"
-                         )
-@token_path
+@api_token
 @click.option(
     "--download-dir",
     default=DEFAULT_ALERTS_DOWNLOAD_DIR, show_default=True,
-    help="Directory where folder alert will be created with all downloaded files",
+    help="Directory where downloaded alerts will be saved.",
 )
 def alert(**kwargs):
-    token = token_load(api_token=kwargs["api_token"], token_path=kwargs["token_path"])
+    token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
     alert_name = dt.acquire_alert(kwargs["alert_id"], kwargs["download_dir"])
     print(f"Downloaded alert: {alert_name}")
-
 
 
 @extension.command(
@@ -531,7 +524,7 @@ def alert(**kwargs):
 @click.option(
     "--download-dir",
     default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
-    help="Directory where folder schemas will be created with all downloaded files",
+    help="Directory where all downloaded files will be saved.",
 )
 def schemas(**kwargs):
     token = kwargs["api_token_path"]
@@ -553,8 +546,6 @@ def schemas(**kwargs):
 def delete(**kwargs):
     token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
-
-
 
 
 @extension_dev.command(
