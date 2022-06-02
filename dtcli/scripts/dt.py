@@ -507,8 +507,7 @@ def upload(**kwargs):
 def alert(**kwargs):
     token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
-    alert_name = dt.acquire_alert(kwargs["alert_id"], kwargs["download_dir"])
-    print(f"Downloaded alert: {alert_name}")
+    dt.acquire_alert(kwargs["alert_id"], kwargs["download_dir"])
 
 
 @extension.command(
