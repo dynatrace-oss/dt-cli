@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import click
 import datetime
+import json
 import re
 
 from click_aliases import ClickAliasedGroup
@@ -499,15 +501,11 @@ def upload(**kwargs):
     "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
-@click.option(
-    "--download-dir",
-    default=DEFAULT_ALERTS_DOWNLOAD_DIR, show_default=True,
-    help="Directory where downloaded alerts will be saved.",
-)
 def alert(**kwargs):
     token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
-    dt.acquire_alert(kwargs["alert_id"], kwargs["download_dir"])
+    alert = dt.acquire_alert(kwargs["alert_id"])
+    print(json.dumps(alert, indent=4))
 
 
 @extension.command(
