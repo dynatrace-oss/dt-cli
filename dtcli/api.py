@@ -11,6 +11,12 @@ class DynatraceAPIClient:
         self.headers = {"Authorization": f"Api-Token {token}"}
         self.requests = requests if requests is not None else _requests_impl
 
+    def acquire_alert(self, alert_id: str) -> dict:
+        r = self.requests.get(self.url_base + f"/api/config/v1/anomalyDetection/metricEvents/" + alert_id, headers=self.headers)
+        r.raise_for_status()
+        alert = r.json()
+        return alert
+
     def acquire_monitoring_configurations(self, fqdn: str):
         r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations", headers=self.headers)
         r.raise_for_status()
@@ -96,6 +102,7 @@ class DynatraceAPIClient:
         header = self.headers
         header["accept"] = "application/octet-stream"
         file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
+        file.raise_for_status()
         zfile = zipfile.ZipFile(io.BytesIO(file.content))
 
         THRESHOLD_ENTRIES = 10000

@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import click
 import datetime
+import json
 import re
 
 from click_aliases import ClickAliasedGroup
@@ -489,6 +491,21 @@ def upload(**kwargs):
     server_api.upload(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
+@extension.command(
+    help="Download alert from choosen id (E|<id>). Token - API v1 scopes Read and Write Configuration."
+)
+@click.argument(
+    "alert-id", nargs=1
+)
+@click.option(
+    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+@api_token
+def alert(**kwargs):
+    token = kwargs["api_token_path"]
+    dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
+    alert = dt.acquire_alert(kwargs["alert_id"])
+    print(json.dumps(alert, indent=4))
 
 
 @extension.command(
@@ -504,7 +521,7 @@ def upload(**kwargs):
 @click.option(
     "--download-dir",
     default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
-    help="Directory where folder schemas will be created with all downloaded files",
+    help="Directory where downloaded schema files will be saved.",
 )
 def schemas(**kwargs):
     token = kwargs["api_token_path"]
@@ -526,8 +543,6 @@ def schemas(**kwargs):
 def delete(**kwargs):
     token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
-
-
 
 
 @extension_dev.command(
