@@ -73,7 +73,7 @@ building.build_extension(
     extension_zip_sig_path = './extension.zip.sig',
     target_dir_path = './dist',
     certificate_file_path = './developer.crt',
-    private_key_file_path = '../developer.key',
+    private_key_file_path = './developer.key',
     dev_passphrase=None,
     keep_intermediate_files=False,
 )
