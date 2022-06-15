@@ -521,7 +521,7 @@ def alert(**kwargs):
 @click.option(
     "--download-dir",
     default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
-    help="Directory where all downloaded files will be saved.",
+    help="Directory where downloaded schema files will be saved.",
 )
 def schemas(**kwargs):
     token = kwargs["api_token_path"]
