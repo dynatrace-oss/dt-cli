@@ -467,6 +467,7 @@ def sanitize_url(ctx, param, value):
 
 @extension.command(
     help="Validates extension package using Dynatrace Cluster API"
+)
 @click.argument("extension-zip", type=click.Path(exists=True, readable=True))
 @click.option(
     "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
