@@ -1,11 +1,11 @@
 # Copyright 2021 Dynatrace LLC
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,3 +25,5 @@ DEFAULT_DEV_KEY = os.path.join(os.path.curdir, "developer.key")
 DEFAULT_CA_CERT = os.path.join(os.path.curdir, "ca.pem")
 DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
 DEFAULT_CERT_VALIDITY = 365 * 3
+DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
+DEFAULT_TOKEN_PATH = "./secrets/token"

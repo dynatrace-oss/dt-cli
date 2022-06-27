@@ -1,11 +1,11 @@
 # Copyright 2021 Dynatrace LLC
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,13 +26,15 @@ from . import __version__
 
 from .constants import EXTENSION_YAML, EXTENSION_ZIP, EXTENSION_ZIP_SIG
 
+
 def _generate_build_comment():
     build_data = {
         "Generator": f"dt-cli {__version__}",
-        "Creation-time": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+        "Creation-time": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
     }
 
-    return '\n'.join(': '.join(pair) for pair in build_data.items())
+    return "\n".join(": ".join(pair) for pair in build_data.items())
+
 
 def _zip_extension(extension_dir_path, extension_zip_path):
 
@@ -45,9 +47,7 @@ def _zip_extension(extension_dir_path, extension_zip_path):
     try:
         with zipfile.ZipFile(extension_zip_path, "w") as zf:
 
-            for file_path in glob.glob(
-                os.path.join(extension_dir_path, "**"), recursive=True
-            ):
+            for file_path in glob.glob(os.path.join(extension_dir_path, "**"), recursive=True):
                 if os.path.isdir(file_path):
                     continue
                 rel_path = os.path.relpath(file_path, extension_dir_path)
@@ -102,19 +102,13 @@ def build_extension(
     private_key_file_path,
     dev_passphrase=None,
     keep_intermediate_files=False,
-    is_rsa=False
 ):
     try:
         utils.require_dir_exists(extension_dir_path)
         utils.require_dir_exists(target_dir_path)
         _zip_extension(extension_dir_path, extension_zip_path)
         signing.sign_file(
-            extension_zip_path,
-            extension_zip_sig_path,
-            certificate_file_path,
-            private_key_file_path,
-            dev_passphrase,
-            is_rsa
+            extension_zip_path, extension_zip_sig_path, certificate_file_path, private_key_file_path, dev_passphrase
         )
         utils.require_file_exists(extension_zip_path)
         utils.require_file_exists(extension_zip_sig_path)
