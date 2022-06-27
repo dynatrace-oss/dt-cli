@@ -1,6 +1,9 @@
 setup:  ## prepare the environment
 	poetry install
 
+test:
+	poetry run pytest -x
+
 .PHONY: help init
 init: ## one time setup
 	direnv allow .
