@@ -459,10 +459,18 @@ def build(**kwargs):
     )
 
 
-@extension.command(help="Validates extension package using Dynatrace Cluster API")
+def sanitize_url(ctx, param, value):
+    if value.endswith("/"):
+        value = value[:-1]
+    return value
+    
+
+@extension.command(
+    help="Validates extension package using Dynatrace Cluster API"
+)
 @click.argument("extension-zip", type=click.Path(exists=True, readable=True))
 @click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
     "--api-token",
@@ -478,7 +486,7 @@ def validate(**kwargs):
 @extension.command(help="Uploads extension package to the Dynatrace Cluster")
 @click.argument("extension-zip", type=click.Path(exists=True, readable=True))
 @click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @click.option(
     "--api-token",
@@ -515,7 +523,7 @@ def alert(**kwargs):
     "version", nargs=1
 )
 @click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 @api_token
 @click.option(
