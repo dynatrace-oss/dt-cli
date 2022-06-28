@@ -4,6 +4,9 @@ setup:  ## prepare the environment
 test:
 	poetry run pytest -x
 
+bump-version: ## bumps version (sepecified into VERSION)
+	poetry run bump2version --no-tag --no-commit --new-version $(VERSION) whatever
+
 .PHONY: help init
 init: ## one time setup
 	direnv allow .
