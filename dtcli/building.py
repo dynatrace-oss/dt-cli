@@ -70,7 +70,11 @@ def _package(
 ):
     extension_yaml_path = os.path.join(extension_dir_path, EXTENSION_YAML)
     with open(extension_yaml_path, "r") as fp:
-        metadata = yaml.safe_load(fp)
+        try:
+            metadata = yaml.safe_load(fp)
+        except yaml.parser.ParserError as e:
+            print(f"Error while parsing yaml: {e}")
+            exit(1)
     extension_file_name = "%s-%s.zip" % (
         metadata["name"],
         metadata["version"],
