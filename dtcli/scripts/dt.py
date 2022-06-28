@@ -134,11 +134,36 @@ def token_load(ctx, param, value):
             raise click.UsageError("Virtual environment DTCLI_API_TOKEN doesn't exist. No token applied.")
         return token
 
+
+def sanitize_url(ctx, param, value):
+    if value.endswith("/"):
+        value = value[:-1]
+    return value
+
+
 # Walk around for token read from env if no file is provided, by default value is "-" and gets token from default file
 # location if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
 api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
                            default="-", callback=token_load
                            )
+
+
+tenant_url = click.option(
+    "--tenant-url",
+    callback=sanitize_url,
+    prompt=True,
+    help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+)
+
+import functools
+def compose_click_decorators_2(a, b) -> "decorator":
+    def wrapper(f):
+        return a(b(f))
+    return wrapper
+
+
+requires_tenant = compose_click_decorators_2(api_token, tenant_url)
+
 
 @click.group(context_settings=CONTEXT_SETTINGS, cls=ClickAliasedGroup)
 @click.version_option(version=__version__)
@@ -459,19 +484,11 @@ def build(**kwargs):
     )
 
 
-def sanitize_url(ctx, param, value):
-    if value.endswith("/"):
-        value = value[:-1]
-    return value
-    
-
 @extension.command(
     help="Validates extension package using Dynatrace Cluster API"
 )
 @click.argument("extension-zip", type=click.Path(exists=True, readable=True))
-@click.option(
-    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
-)
+@tenant_url
 @click.option(
     "--api-token",
     prompt=True,
@@ -485,9 +502,7 @@ def validate(**kwargs):
 
 @extension.command(help="Uploads extension package to the Dynatrace Cluster")
 @click.argument("extension-zip", type=click.Path(exists=True, readable=True))
-@click.option(
-    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
-)
+@tenant_url
 @click.option(
     "--api-token",
     prompt=True,
@@ -505,10 +520,7 @@ def upload(**kwargs):
 @click.argument(
     "alert-id", nargs=1
 )
-@click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
-)
-@api_token
+@requires_tenant
 def alert(**kwargs):
     token = kwargs["api_token_path"]
     dt = api.DynatraceAPIClient(kwargs["tenant_url"], token=token)
@@ -522,9 +534,7 @@ def alert(**kwargs):
 @click.argument(
     "version", nargs=1
 )
-@click.option(
-    "--tenant-url", callback=sanitize_url, prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
-)
+@tenant_url
 @api_token
 @click.option(
     "--download-dir",
@@ -544,9 +554,7 @@ def schemas(**kwargs):
 @click.argument(
     "extension", nargs=1
 )
-@click.option(
-    "--tenant-url", prompt=True, help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
-)
+@tenant_url
 @api_token
 def delete(**kwargs):
     token = kwargs["api_token_path"]
