@@ -16,10 +16,12 @@ import click
 import datetime
 import json
 import re
+from pathlib import Path
 
 from click_aliases import ClickAliasedGroup
 import pathlib
 
+import dtcli.constants as defaults
 from dtcli.constants import *
 from dtcli.utils import *
 
@@ -155,10 +157,18 @@ tenant_url = click.option(
     help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
 
-import functools
+
 def compose_click_decorators_2(a, b) -> "decorator":
     def wrapper(f):
         return a(b(f))
+    return wrapper
+
+
+import functools
+def click_callback_adapt(f) -> "function":
+    @functools.wraps(f)
+    def wrapper(_, __, v):
+        return f(v)
     return wrapper
 
 
@@ -179,6 +189,7 @@ def main():
 def extension():
     """
     Set of utilities for signing, building and uploading extensions
+
 
     \b
     Example flow:
@@ -400,7 +411,7 @@ def gencerts(**kwargs):
 
 
 @extension.command(
-    help=f"Builds extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
+    help=f"Build and sign extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
 )
 @click.option(
     "--extension-directory",
@@ -472,7 +483,7 @@ def build(**kwargs):
     private_key_file_path = kwargs["private_key"]
     require_file_exists(private_key_file_path)
 
-    building.build_extension(
+    building.build_and_sign(
         extension_dir_path,
         extension_zip_path,
         extension_zip_sig_path,
@@ -482,6 +493,48 @@ def build(**kwargs):
         kwargs["dev_passphrase"],
         kwargs["keep_intermediate_files"],
     )
+
+
+@extension.command()
+@click.option(
+    "--src",
+    "--source",
+    "source",
+    default=defaults.DEFAULT_EXTENSION_DIR2,
+    type=click.Path(exists=True, file_okay=False),
+    callback=click_callback_adapt(Path),
+    show_default=True,
+    help="Directory where the `extension.yaml' and other extension files are located",
+)
+@click.option(
+    "-o",
+    "--output",
+    "destination",
+    type=click.Path(writable=True),
+    default=Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP,
+    callback=click_callback_adapt(Path),
+    show_default=True,
+    help="Location where extension package will be written",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Ignore subtleties , overwrite without prompt, when in doubt - advance!",
+)
+def assemble(source, destination, force):
+    """
+    Build extension package
+    """
+    if destination.exists() and not force:
+        # TODO: actually implement "is_safe_file"
+        is_same_file = False 
+        if not is_same_file:
+            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+
+    building.build(extension_dir_path=source, extension_zip_path=destination)
 
 
 @extension.command(

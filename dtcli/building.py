@@ -97,7 +97,11 @@ def _package(
         print("Wrote %s file" % extension_file_path)
 
 
-def build_extension(
+def build(extension_dir_path, extension_zip_path):
+    _zip_extension(extension_dir_path, extension_zip_path)
+
+
+def build_and_sign(
     extension_dir_path,
     extension_zip_path,
     extension_zip_sig_path,
@@ -108,14 +112,21 @@ def build_extension(
     keep_intermediate_files=False,
 ):
     try:
+        # shouldn't we
+        # a) guard against it a the intput level
+        # b) handle faults anyway?
         utils.require_dir_exists(extension_dir_path)
         utils.require_dir_exists(target_dir_path)
-        _zip_extension(extension_dir_path, extension_zip_path)
+
+        build(extension_dir_path, extension_zip_path)
+
         signing.sign_file(
             extension_zip_path, extension_zip_sig_path, certificate_file_path, private_key_file_path, dev_passphrase
         )
+
         utils.require_file_exists(extension_zip_path)
         utils.require_file_exists(extension_zip_sig_path)
+
         _package(
             extension_dir_path,
             target_dir_path,
@@ -130,6 +141,6 @@ def build_extension(
                 ]
             )
     except utils.ExtensionBuildError:
+        # TODO: handle this a presentation layer
         print("Failed to build extension! :-(")
-    else:
-        print("Extension built successfuly! :-)")
+        exit(1)

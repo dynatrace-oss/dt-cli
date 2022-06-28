@@ -20,6 +20,7 @@ EXTENSION_ZIP = "extension.zip"
 EXTENSION_ZIP_SIG = "extension.zip.sig"
 DEFAULT_TARGET_PATH = os.path.curdir
 DEFAULT_EXTENSION_DIR = os.path.join(os.path.curdir, "extension")
+DEFAULT_EXTENSION_DIR2 = os.path.join(os.path.curdir, "src")
 DEFAULT_DEV_CERT = os.path.join(os.path.curdir, "developer.pem")
 DEFAULT_DEV_KEY = os.path.join(os.path.curdir, "developer.key")
 DEFAULT_CA_CERT = os.path.join(os.path.curdir, "ca.pem")
