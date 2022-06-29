@@ -525,7 +525,7 @@ def build(**kwargs):
     is_flag=True,
     default=False,
     show_default=True,
-    help="Ignore subtleties , overwrite without prompt, when in doubt - advance!",
+    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
 )
 def assemble(source, destination, force):
     """
