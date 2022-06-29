@@ -16,6 +16,7 @@ import click
 import datetime
 import json
 import re
+from typing import Callable, Any, TypeVar
 from pathlib import Path
 
 from click_aliases import ClickAliasedGroup
@@ -165,7 +166,9 @@ def compose_click_decorators_2(a, b) -> "decorator":
 
 
 import functools
-def click_callback_adapt(f) -> "function":
+T = TypeVar("T")
+U = TypeVar("U")
+def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
     @functools.wraps(f)
     def wrapper(_, __, v):
         return f(v)
@@ -502,7 +505,7 @@ def build(**kwargs):
     "source",
     default=defaults.DEFAULT_EXTENSION_DIR2,
     type=click.Path(exists=True, file_okay=False),
-    callback=click_callback_adapt(Path),
+    callback=mk_click_callback(Path),
     show_default=True,
     help="Directory where the `extension.yaml' and other extension files are located",
 )
@@ -512,7 +515,7 @@ def build(**kwargs):
     "destination",
     type=click.Path(writable=True),
     default=Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP,
-    callback=click_callback_adapt(Path),
+    callback=mk_click_callback(Path),
     show_default=True,
     help="Location where extension package will be written",
 )
@@ -529,7 +532,6 @@ def assemble(source, destination, force):
     Build extension package
     """
     if destination.exists() and not force:
-        # TODO: actually implement "is_safe_file"
         is_same_file = False 
         if not is_same_file:
             raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
