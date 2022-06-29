@@ -532,9 +532,7 @@ def assemble(source, destination, force):
     Build extension package
     """
     if destination.exists() and not force:
-        is_same_file = False 
-        if not is_same_file:
-            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+        raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
 
     building.build(extension_dir_path=source, extension_zip_path=destination)
 
