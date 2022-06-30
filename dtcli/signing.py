@@ -189,9 +189,11 @@ def generate_cert(
 
 
 def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None, _no_side_effect=False):
-    print(
-        "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path, private_key_file_path)
-    )
+    if not _no_side_effect:
+        print(
+            "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path, private_key_file_path)
+        )
+
     with open(private_key_file_path, "rb") as fp:
         private_key = serialization.load_pem_private_key(
             fp.read(), password=dev_passphrase.encode() if dev_passphrase else None, backend=default_backend()
