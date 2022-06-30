@@ -188,7 +188,7 @@ def generate_cert(
     print("Wrote developer certificate: %s" % dev_cert_file_path)
 
 
-def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None):
+def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None, _no_side_effect=False):
     print(
         "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path, private_key_file_path)
     )
@@ -249,8 +249,12 @@ def sign_file(file_path, signature_file_path, certificate_file_path, private_key
     asn1obj["content_type"] = "signed_data"
     asn1obj["content"] = signed_data
 
-    with open(signature_file_path, "wb+") as fp:
-        der_bytes = asn1obj.dump()
-        pem_bytes = pem.armor("CMS", der_bytes)
-        fp.write(pem_bytes)
-        print("Wrote signature file %s" % signature_file_path)
+    der_bytes = asn1obj.dump()
+    pem_bytes = pem.armor("CMS", der_bytes)
+
+    if not _no_side_effect:
+        with open(signature_file_path, "wb+") as fp:
+            fp.write(pem_bytes)
+            print("Wrote signature file %s" % signature_file_path)
+    else:
+       return pem_bytes 

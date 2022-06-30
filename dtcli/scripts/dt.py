@@ -514,7 +514,7 @@ def build(**kwargs):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    default=Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP,
+    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP),
     callback=mk_click_callback(Path),
     show_default=True,
     help="Location where extension package will be written",
@@ -535,6 +535,71 @@ def assemble(source, destination, force):
         raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
 
     building.build(extension_dir_path=source, extension_zip_path=destination)
+
+
+@extension.command()
+@click.option(
+    "--src",
+    "--source",
+    "payload",
+    # TODO: extract default as assembled uses the same default in place of output
+    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP),
+    type=click.Path(exists=True, dir_okay=False),
+    callback=mk_click_callback(Path),
+    show_default=True,
+    help="Path to zipped extension file; payload for signing",
+)
+@click.option(
+    "--key",
+    "fused_keycert",
+
+    # TODO: figure out a great name for a fused_keycert - ./secrets/????.pem
+    # default=str(Path(defaults.DEFAULT_TARGET_PATH) / ),
+    required=True,
+
+    type=click.Path(exists=True, dir_okay=False),
+    callback=mk_click_callback(Path),
+    show_default=True,
+    help="Location of the fused key-certificate for signing with",
+)
+@click.option(
+    "-o",
+    "--output",
+    "destination",
+    type=click.Path(writable=True),
+    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
+    callback=mk_click_callback(Path),
+    show_default=True,
+    help="Location where signed extension package will be written",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
+)
+def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
+    """
+    Produce signed extension package.
+
+    This command requires key in the fused key-certificate format (so: one file containing both key and certificate). If for whatever reason you'd like to seperate those please reffer to the `build` command. 
+
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
+    """
+    # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
+    if destination.exists():
+        if force:
+            click.echo(f"Warning: overwritting {destination}", err=True)
+        else:
+            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+
+    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
+
+    # TODO: handle bubling errors - try to trace them back to paramters if that makes sense
+    # likely in the signing part -> zips so straightforward that it might be difficult to cause them to fail for most users
+    building.sign(payload, destination, fused_keycert)
 
 
 @extension.command(
