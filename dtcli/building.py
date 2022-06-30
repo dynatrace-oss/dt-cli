@@ -17,6 +17,7 @@ import os
 import os.path
 import zipfile
 import datetime
+from pathlib import Path
 
 import yaml
 
@@ -97,8 +98,20 @@ def _package(
         print("Wrote %s file" % extension_file_path)
 
 
-def build(extension_dir_path, extension_zip_path):
-    _zip_extension(extension_dir_path, extension_zip_path)
+def build(extension_dir: Path, extension_zip: Path):
+    # how about simply: source and destination?
+    _zip_extension(extension_dir, extension_zip)
+
+
+def sign(payload: Path, destination: Path, fused_keycert: Path):
+    # since it's a constant size with regards to the payload it can be safely done in memory
+    # TODO: do something about this chatty underling
+    pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=fused_keycert, private_key_file_path=fused_keycert, dev_passphrase=None, _no_side_effect=True)
+
+    with zipfile.ZipFile(destination, "w") as zf:
+        zf.comment = bytes(_generate_build_comment(), "utf-8")
+        zf.write(payload, arcname=EXTENSION_ZIP)
+        zf.writestr(EXTENSION_ZIP_SIG, pem_bytes)
 
 
 def build_and_sign(
@@ -124,6 +137,7 @@ def build_and_sign(
             extension_zip_path, extension_zip_sig_path, certificate_file_path, private_key_file_path, dev_passphrase
         )
 
+        # TODO: same as above - if this is an assert it should say "assert"
         utils.require_file_exists(extension_zip_path)
         utils.require_file_exists(extension_zip_sig_path)
 
@@ -142,5 +156,5 @@ def build_and_sign(
             )
     except utils.ExtensionBuildError:
         # TODO: handle this a presentation layer
-        print("Failed to build extension! :-(")
         exit(1)
+        print("Failed to build extension! :-(")
