@@ -105,7 +105,6 @@ def build(extension_dir: Path, extension_zip: Path):
 
 def sign(payload: Path, destination: Path, fused_keycert: Path):
     # since it's a constant size with regards to the payload it can be safely done in memory
-    # TODO: do something about this chatty underling
     pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=fused_keycert, private_key_file_path=fused_keycert, dev_passphrase=None, _no_side_effect=True)
 
     with zipfile.ZipFile(destination, "w") as zf:
@@ -156,5 +155,5 @@ def build_and_sign(
             )
     except utils.ExtensionBuildError:
         # TODO: handle this a presentation layer
-        exit(1)
         print("Failed to build extension! :-(")
+        exit(1)
