@@ -597,8 +597,6 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
 
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
 
-    # TODO: handle bubling errors - try to trace them back to paramters if that makes sense
-    # likely in the signing part -> zips so straightforward that it might be difficult to cause them to fail for most users
     building.sign(payload, destination, fused_keycert)
 
 
