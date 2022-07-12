@@ -37,3 +37,4 @@ DEFAULT_TOKEN_PATH = os.path.join(os.path.curdir, "secrets", "token")
 DEFAULT_KEYCERT_PATH = os.path.join(os.path.curdir, "secrets", "developer.pem")
 DEFAULT_BUILD_OUTPUT = Path(DEFAULT_TARGET_PATH) / EXTENSION_ZIP
 REQUIRED_PRIVATE_KEY_PERMISSIONS = stat.S_IREAD
+SCHEMAS_ENTRYPOINT = os.path.join(os.path.curdir, "schemas", "extension.schema.json")
