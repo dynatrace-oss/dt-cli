@@ -12,7 +12,7 @@ packages = [
 ]
 readme = "README.md"
 repository = "https://github.com/dynatrace-oss/dt-cli"
-version = "1.4.3"
+version = "1.5.0"
 
 
 [tool.poetry.dependencies]
@@ -24,6 +24,7 @@ cryptography = "^3.4"
 python = "^3.8"
 wheel = "^0.36"
 requests = "^2.26"
+jsonschema = "^4.7.2"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^3.5"

@@ -18,6 +18,7 @@ import json
 import os
 import platform
 import re
+import sys
 from pathlib import Path
 from typing import Callable, Any, TypeVar
 
@@ -26,7 +27,7 @@ from click_aliases import ClickAliasedGroup  # noqa: I201
 
 import dtcli.constants as const
 from dtcli import __version__
-from dtcli import building, delete_extension, api, utils
+from dtcli import building, delete_extension, api, utils, validate_schema as _validate_schema
 from dtcli import dev
 from dtcli import server_api
 from dtcli import signing
@@ -756,6 +757,40 @@ def delete(**kwargs):
     """
     token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
+
+
+@extension.command(
+    help="Validate extension with schemas"
+)
+@click.option(
+    "--instance",
+    type=click.Path(writable=True),
+    callback=mk_click_callback(Path),
+    default=const.EXTENSION_YAML, show_default=True,
+    help="Extension file",
+)
+@click.option(
+    "--schema-entrypoint",
+    type=click.Path(writable=True),
+    callback=mk_click_callback(Path),
+    default=const.SCHEMAS_ENTRYPOINT, show_default=True,
+    help="Schema entrypoint. Assumption: All schema files are in the same directory.",
+)
+def validate_schema(instance, **kwargs):
+    errors = _validate_schema.validate_schema(
+        instance_object=instance, schema_entrypoint=kwargs["schema_entrypoint"],
+        warn=functools.partial(click.echo, err=True))
+    invalid = False
+    if errors:
+        invalid = True
+        for i, e in enumerate(errors):
+            print(f'{10 * "-"} error {i} {10 * "-"}', file=sys.stderr)
+            print(f'line: {e["line"]}, column: {e["column"]}', file=sys.stderr)
+            print(f'path: {e["path"]}', file=sys.stderr)
+            print(f'cause: {e["cause"]}', file=sys.stderr)
+    if invalid:
+        print(f"{5* '-'} {i + 1} errors total, aborting! {5* '-'}", file=sys.stderr)
+    exit(invalid)
 
 
 @extension_dev.command()
