@@ -534,7 +534,7 @@ def assemble(source, destination, force):
     if destination.exists() and not force:
         raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
 
-    building.build(extension_dir_path=source, extension_zip_path=destination)
+    building.build(extension_dir=source, extension_zip=destination)
 
 
 @extension.command()
