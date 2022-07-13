@@ -514,10 +514,10 @@ def build(**kwargs):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP),
+    default=str(defaults.DEFAULT_BUILD_OUTPUT),
     callback=mk_click_callback(Path),
     show_default=True,
-    help="Location where extension package will be written",
+    help="Location where the extension package will be written",
 )
 @click.option(
     "-f",
@@ -542,8 +542,7 @@ def assemble(source, destination, force):
     "--src",
     "--source",
     "payload",
-    # TODO: extract default as assembled uses the same default in place of output
-    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP),
+    default=str(defaults.DEFAULT_BUILD_OUTPUT),
     type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     show_default=True,
