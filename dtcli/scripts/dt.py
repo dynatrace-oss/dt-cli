@@ -92,28 +92,6 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
     )
 
 
-def _gendevcert(
-    ca_cert_path, ca_key_path, dev_cert_path, dev_key_path, subject, days_valid, ca_passphrase, dev_passphrase
-):
-    require_file_exists(ca_cert_path)
-    require_file_exists(ca_key_path)
-    require_is_not_dir(dev_cert_path)
-    require_is_not_dir(dev_key_path)
-
-    check_file_exists(dev_cert_path, KeyGenerationError)
-    check_file_exists(dev_key_path, KeyGenerationError)
-
-    signing.generate_cert(
-        ca_cert_path,
-        ca_key_path,
-        dev_cert_path,
-        dev_key_path,
-        subject,
-        datetime.datetime.today() + datetime.timedelta(days=days_valid),
-        ca_passphrase,
-        dev_passphrase,
-    )
-
 def token_load(ctx, param, value):
     """
     Function load token to application. First it checks if path is passed as argument. If not it takes
@@ -313,17 +291,106 @@ def genca(**kwargs):
     help="Number of days certificate will be valid",
 )
 def gendevcert(**kwargs):
-    _gendevcert(
+    signing.generate_cert(
         kwargs["ca_cert"],
         kwargs["ca_key"],
         kwargs["dev_cert"],
         kwargs["dev_key"],
-        kwargs["dev_subject"],
-        kwargs["days_valid"],
+        subject,
+        datetime.datetime.today() + datetime.timedelta(days=days_valid),
         kwargs["ca_passphrase"],
         kwargs["dev_passphrase"],
     )
 
+
+@extension.command()
+@click.option(
+    "-o",
+    "--output",
+    "destination",
+    type=click.Path(writable=True),
+    callback=mk_click_callback(Path),
+    required=True,
+    help="Location where the keycert will be written",
+)
+@click.option(
+    "--ca-crt",
+    type=click.Path(exists=True, readable=True, dir_okay=False),
+    callback=mk_click_callback(Path),
+    required=True,
+    help="Location of CA public certificate"
+)
+@click.option(
+    "--ca-key",
+    type=click.Path(exists=True, readable=True, dir_okay=False),
+    callback=mk_click_callback(Path),
+    required=True,
+    help="Location of CA private key"
+)
+@click.option(
+    "--name",
+    prompt=True,
+    # TODO: more restrictive validation
+    help="Name of the certificate holder, likely developer name",
+)
+@click.option(
+    "--company",
+    # TODO: more restrictive validation
+    help="Name of the company that the holder belongs to",
+)
+@click.option(
+    "--days-valid",
+    default=defaults.DEFAULT_CERT_VALIDITY,
+    show_default=True,
+    # TODO: more restrictive validation
+    type=int,
+    help="Number of days certificate will be valid",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
+)
+# TODO: additional subject parameters
+def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_valid, force):
+    """
+    Generate a keycert for developer.
+
+    This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf the Certificate Authority.
+
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
+    """
+    if destination.exists() and not force:
+        raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+
+    subject_kv = [
+        ("CN", name),
+    ]
+    
+    if company:
+        subject_kv.append(("O", company))
+    # TODO: get additional keys - via an additional n-argument
+
+    # TODO: is this the correct format?
+    subject = "".join(map(lambda t: f"/{t[0]}={t[1]}", subject_kv))
+    # TODO: maybe I can just unparse? What about order?
+    subject=validate_parse_subject(None, None, subject)
+    # TODO: test logic after clayring that
+
+    # TODO: see sign
+    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
+    # TODO: both setting the dev passphrase and reading the CA key passphrase
+
+    signing.generate_cert(
+        ca_cert_file_path=ca_crt,
+        ca_key_file_path=ca_key,
+        destination=destination,
+        subject=subject,
+        not_valid_after = datetime.datetime.today() + datetime.timedelta(days=days_valid),
+    )
 
 @extension.command(
     help="Creates CA key, CA certificate, developer key and developer certificate used for extension signing"
@@ -514,8 +581,8 @@ def build(**kwargs):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    default=str(defaults.DEFAULT_BUILD_OUTPUT),
     callback=mk_click_callback(Path),
+    default=str(defaults.DEFAULT_BUILD_OUTPUT),
     show_default=True,
     help="Location where the extension package will be written",
 )
@@ -551,11 +618,7 @@ def assemble(source, destination, force):
 @click.option(
     "--key",
     "fused_keycert",
-
-    # TODO: figure out a great name for a fused_keycert - ./secrets/????.pem
-    # default=str(Path(defaults.DEFAULT_TARGET_PATH) / ),
-    required=True,
-
+    default=str(defaults.DEFAULT_KEYCERT_PATH),
     type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     show_default=True,
@@ -566,8 +629,8 @@ def assemble(source, destination, force):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
     callback=mk_click_callback(Path),
+    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
     show_default=True,
     help="Location where signed extension package will be written",
 )
@@ -594,6 +657,7 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
         else:
             raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
 
+    # TODO: see generate_developer_pem
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
 
     building.sign(payload, destination, fused_keycert)

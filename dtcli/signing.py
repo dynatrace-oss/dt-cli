@@ -107,13 +107,24 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
 def generate_cert(
     ca_cert_file_path,
     ca_key_file_path,
-    dev_cert_file_path,
-    dev_key_file_path,
     subject,
     not_valid_after,
+    destination=None,
+    dev_cert_file_path=None,
+    dev_key_file_path=None,
     ca_passphrase=None,
     dev_passphrase=None,
 ):
+    if not (destination or (dev_cert_file_path and dev_key_file_path)):
+        raise TypeError("either fused destination or cert *AND* key destination must be specified")
+
+    if destination:
+        dev_cert_file_path = destination
+        dev_key_file_path = destination
+        flags =  "a"
+    else:
+        flags = "w"
+
     print("Loading CA private key %s" % ca_key_file_path)
     with open(ca_key_file_path, "rb") as fp:
         ca_private_key = serialization.load_pem_private_key(
@@ -126,6 +137,7 @@ def generate_cert(
     subject_name = _generate_x509_name(subject)
     if ca_cert.issuer == subject_name:
         raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
+
 
     print("Generating developer certificate...")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
@@ -183,7 +195,7 @@ def generate_cert(
         algorithm=hashes.SHA256(),
     )
 
-    with open(dev_cert_file_path, "wb") as fp:
+    with open(dev_cert_file_path, "b" + flags) as fp:
         fp.write(certificate.public_bytes(serialization.Encoding.PEM))
     print("Wrote developer certificate: %s" % dev_cert_file_path)
 
