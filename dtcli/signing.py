@@ -107,13 +107,13 @@ def generate_ca(ca_cert_file_path, ca_key_file_path, subject, not_valid_after, p
 def generate_cert(
     ca_cert_file_path,
     ca_key_file_path,
+    dev_cert_file_path,
+    dev_key_file_path,
     subject,
     not_valid_after,
-    destination=None,
-    dev_cert_file_path=None,
-    dev_key_file_path=None,
     ca_passphrase=None,
     dev_passphrase=None,
+    destination=None,
 ):
     if not (destination or (dev_cert_file_path and dev_key_file_path)):
         raise TypeError("either fused destination or cert *AND* key destination must be specified")

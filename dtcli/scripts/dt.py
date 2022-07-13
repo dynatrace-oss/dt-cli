@@ -390,6 +390,9 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
         destination=destination,
         subject=subject,
         not_valid_after = datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        # TODO: remove this after deprecating other certgen + refactoring
+        dev_cert_file_path=None,
+        dev_key_file_path=None,
     )
 
 @extension.command(
@@ -628,7 +631,8 @@ def assemble(source, destination, force):
     "-o",
     "--output",
     "destination",
-    type=click.Path(writable=True),
+    type=click.Path(writable=True, path_type=Path),
+    
     callback=mk_click_callback(Path),
     default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
     show_default=True,
