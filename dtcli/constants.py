@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from pathlib import Path
 import os.path
 
 
@@ -29,3 +31,4 @@ DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
 DEFAULT_CERT_VALIDITY = 365 * 3
 DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
 DEFAULT_TOKEN_PATH = "./secrets/token"
+DEFAULT_BUILD_OUTPUT = Path(DEFAULT_TARGET_PATH) / EXTENSION_ZIP
