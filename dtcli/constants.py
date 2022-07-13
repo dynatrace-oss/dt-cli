@@ -32,7 +32,6 @@ DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
 # TODO: is this a good default value?
 DEFAULT_CERT_VALIDITY = 365 * 3
 DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
-os.path.join(os.path.curdir, "ca.key")
 DEFAULT_TOKEN_PATH = os.path.join(os.path.curdir, "secrets", "token")
 DEFAULT_KEYCERT_PATH = os.path.join(os.path.curdir, "secrets", "developer.pem")
 DEFAULT_BUILD_OUTPUT = Path(DEFAULT_TARGET_PATH) / EXTENSION_ZIP

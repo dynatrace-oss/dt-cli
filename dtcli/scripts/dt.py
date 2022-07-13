@@ -581,8 +581,8 @@ def build(**kwargs):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    callback=mk_click_callback(Path),
     default=str(defaults.DEFAULT_BUILD_OUTPUT),
+    callback=mk_click_callback(Path),
     show_default=True,
     help="Location where the extension package will be written",
 )
