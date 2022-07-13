@@ -631,8 +631,7 @@ def assemble(source, destination, force):
     "-o",
     "--output",
     "destination",
-    type=click.Path(writable=True, path_type=Path),
-    
+    type=click.Path(writable=True),
     callback=mk_click_callback(Path),
     default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
     show_default=True,
