@@ -14,6 +14,7 @@
 
 import os.path
 import re
+from pathlib import Path
 
 
 class ExtensionBuildError(Exception):
@@ -77,3 +78,7 @@ def remove_files(file_paths):
             os.remove(file_path)
         except:
             print("Failed to remove %s" % file_path)
+
+
+def acquire_file_dac(path: Path) -> int:
+    return (os.stat(str(path)).st_mode) % 0o1000

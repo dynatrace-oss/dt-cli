@@ -17,6 +17,7 @@ import datetime
 import json
 import re
 from typing import Callable, Any, TypeVar
+import platform
 from pathlib import Path
 
 from click_aliases import ClickAliasedGroup
@@ -24,6 +25,7 @@ import pathlib
 
 import dtcli.constants as defaults
 from dtcli.constants import *
+from dtcli.utils import acquire_file_dac
 from dtcli.utils import *
 
 from dtcli import building, delete_extension, api
@@ -346,16 +348,7 @@ def gendevcert(**kwargs):
     type=int,
     help="Number of days certificate will be valid",
 )
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
-)
-# TODO: additional subject parameters
-def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_valid, force):
+def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_valid):
     """
     Generate a keycert for developer.
 
@@ -363,9 +356,6 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
 
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
     """
-    if destination.exists() and not force:
-        raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
-
     subject_kv = [
         ("CN", name),
     ]
@@ -654,11 +644,24 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
+
     if destination.exists():
         if force:
             click.echo(f"Warning: overwritting {destination}", err=True)
         else:
             raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+
+    def is_key_permissions_ok():
+        permissions = acquire_file_dac(fused_keycert) 
+
+        if platform.system() == "Windows":
+            click.echo(f"Warning: skipping file permission check", err=True)
+            return True
+        else:
+            return permissions == 0o400
+
+    if not is_key_permissions_ok() and not force:
+        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend 400, please fix the permissions via `chmod 400 {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
 
     # TODO: see generate_developer_pem
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
