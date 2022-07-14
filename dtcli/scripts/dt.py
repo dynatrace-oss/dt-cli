@@ -296,7 +296,7 @@ def gendevcert(**kwargs):
         kwargs["ca_key"],
         kwargs["dev_cert"],
         kwargs["dev_key"],
-        subject,
+        kwargs["dev_subject"],
         datetime.datetime.today() + datetime.timedelta(days=days_valid),
         kwargs["ca_passphrase"],
         kwargs["dev_passphrase"],
