@@ -21,6 +21,7 @@ EXTENSION_YAML = "extension.yaml"
 EXTENSION_ZIP = "extension.zip"
 EXTENSION_ZIP_BUNDLE = "bundle.zip"
 EXTENSION_ZIP_SIG = "extension.zip.sig"
+# TODO: convert to Pathlib
 DEFAULT_TARGET_PATH = os.path.curdir
 DEFAULT_EXTENSION_DIR = os.path.join(os.path.curdir, "extension")
 DEFAULT_EXTENSION_DIR2 = os.path.join(os.path.curdir, "src")
@@ -28,7 +29,9 @@ DEFAULT_DEV_CERT = os.path.join(os.path.curdir, "developer.pem")
 DEFAULT_DEV_KEY = os.path.join(os.path.curdir, "developer.key")
 DEFAULT_CA_CERT = os.path.join(os.path.curdir, "ca.pem")
 DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
+# TODO: is this a good default value?
 DEFAULT_CERT_VALIDITY = 365 * 3
 DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
-DEFAULT_TOKEN_PATH = "./secrets/token"
+DEFAULT_TOKEN_PATH = os.path.join(os.path.curdir, "secrets", "token")
+DEFAULT_KEYCERT_PATH = os.path.join(os.path.curdir, "secrets", "developer.pem")
 DEFAULT_BUILD_OUTPUT = Path(DEFAULT_TARGET_PATH) / EXTENSION_ZIP
