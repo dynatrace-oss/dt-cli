@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import datetime
 
 from asn1crypto import cms, util, x509, core, pem
@@ -154,6 +155,7 @@ def generate_cert(
                 encryption_algorithm=private_key_encryption,
             )
         )
+
     public_key = private_key.public_key()
     print("Wrote developer private key: %s" % dev_key_file_path)
 
@@ -198,6 +200,8 @@ def generate_cert(
     with open(dev_cert_file_path, "b" + flags) as fp:
         fp.write(certificate.public_bytes(serialization.Encoding.PEM))
     print("Wrote developer certificate: %s" % dev_cert_file_path)
+
+    os.chmod(dev_key_file_path, 0o400)
 
 
 def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None, _no_side_effect=False):
