@@ -654,6 +654,7 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
     def is_key_permissions_ok():
         permissions = acquire_file_dac(fused_keycert) 
 
+        # Windows doesn't distinguish between user, group and other in that way
         if platform.system() == "Windows":
             click.echo(f"Warning: skipping file permission check", err=True)
             return True

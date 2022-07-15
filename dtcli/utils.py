@@ -81,4 +81,6 @@ def remove_files(file_paths):
 
 
 def acquire_file_dac(path: Path) -> int:
+    # we only care about the last 3 digits of the mode
+    # which are in fact the file permission
     return (os.stat(str(path)).st_mode) % 0o1000
