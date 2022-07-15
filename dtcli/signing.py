@@ -23,6 +23,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa, utils
 from cryptography.hazmat.backends import default_backend
 
 from . import utils as dtcliutils
+from . import constants
 
 
 CHUNK_SIZE = 1024 * 1024
@@ -201,7 +202,7 @@ def generate_cert(
         fp.write(certificate.public_bytes(serialization.Encoding.PEM))
     print("Wrote developer certificate: %s" % dev_cert_file_path)
 
-    os.chmod(dev_key_file_path, 0o400)
+    os.chmod(dev_key_file_path, constants.REQUIRED_PRIVATE_KEY_PERMISSIONS)
 
 
 def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None, _no_side_effect=False):

@@ -645,12 +645,6 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
 
-    if destination.exists():
-        if force:
-            click.echo(f"Warning: overwritting {destination}", err=True)
-        else:
-            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
-
     def is_key_permissions_ok():
         permissions = acquire_file_dac(fused_keycert) 
 
@@ -659,10 +653,16 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
             click.echo(f"Warning: skipping file permission check", err=True)
             return True
         else:
-            return permissions == 0o400
+            return permissions == defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS
 
     if not is_key_permissions_ok() and not force:
-        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend 400, please fix the permissions via `chmod 400 {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
+        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend {oct(defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
+
+    if destination.exists():
+        if force:
+            click.echo(f"Warning: overwritting {destination}", err=True)
+        else:
+            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
 
     # TODO: see generate_developer_pem
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
