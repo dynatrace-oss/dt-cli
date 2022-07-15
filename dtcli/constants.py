@@ -13,8 +13,9 @@
 # limitations under the License.
 
 
-from pathlib import Path
+import stat
 import os.path
+from pathlib import Path
 
 
 EXTENSION_YAML = "extension.yaml"
@@ -35,3 +36,4 @@ DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
 DEFAULT_TOKEN_PATH = os.path.join(os.path.curdir, "secrets", "token")
 DEFAULT_KEYCERT_PATH = os.path.join(os.path.curdir, "secrets", "developer.pem")
 DEFAULT_BUILD_OUTPUT = Path(DEFAULT_TARGET_PATH) / EXTENSION_ZIP
+REQUIRED_PRIVATE_KEY_PERMISSIONS = stat.S_IREAD
