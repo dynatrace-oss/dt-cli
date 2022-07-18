@@ -461,13 +461,14 @@ def gencerts(**kwargs):
         kwargs["days_valid"],
         kwargs["ca_passphrase"],
     )
-    _gendevcert(
+    signing.generate_cert(
         kwargs["ca_cert"],
         kwargs["ca_key"],
         kwargs["dev_cert"],
         kwargs["dev_key"],
         kwargs["dev_subject"],
         kwargs["days_valid"],
+        datetime.datetime.today() + datetime.timedelta(days=days_valid),
         kwargs["ca_passphrase"],
         kwargs["dev_passphrase"],
     )
