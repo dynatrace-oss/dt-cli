@@ -12,29 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
 import datetime
+import functools
 import json
-import re
-from typing import Callable, Any, TypeVar
+import os
 import platform
+import re
 from pathlib import Path
+from typing import Callable, Any, TypeVar
 
-from click_aliases import ClickAliasedGroup
-import pathlib
+import click
+from click_aliases import ClickAliasedGroup  # noqa: I201
 
-import dtcli.constants as defaults
-from dtcli.constants import *
-from dtcli.utils import acquire_file_dac
-from dtcli.utils import *
-
-from dtcli import building, delete_extension, api
-from dtcli import signing
+import dtcli.constants as const
 from dtcli import __version__
+from dtcli import building, delete_extension, api, utils
 from dtcli import dev
 from dtcli import server_api
+from dtcli import signing
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 def validate_parse_subject(ctx, param, value):
@@ -67,8 +64,8 @@ def edit_other_option_if_true(ctx, param, value, other_name, edit_callback):
 def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase):
     if force:
         print("Forced generation option used. Already existing CA certificate files will be overwritten.")
-        check_file_exists(ca_cert_path, KeyGenerationError)
-        check_file_exists(ca_key_path, KeyGenerationError)
+        utils.check_file_exists(ca_cert_path, utils.KeyGenerationError)
+        utils.check_file_exists(ca_key_path, utils.KeyGenerationError)
         signing.generate_ca(
             ca_cert_path,
             ca_key_path,
@@ -78,10 +75,10 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
         )
         return
 
-    if check_file_exists(ca_cert_path, KeyGenerationError, warn_overwrite=False) and check_file_exists(
-        ca_key_path, KeyGenerationError, warn_overwrite=False
+    if utils.check_file_exists(ca_cert_path, utils.KeyGenerationError, warn_overwrite=False) and utils.check_file_exists(
+        ca_key_path, utils.KeyGenerationError, warn_overwrite=False
     ):
-        raise KeyGenerationError(
+        raise utils.KeyGenerationError(
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
         )
 
@@ -96,14 +93,16 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
 
 def token_load(ctx, param, value):
     """
-    Function load token to application. First it checks if path is passed as argument. If not it takes
+    Function load token to application.
+
+    First it checks if path is passed as argument.If not it takes
     default token localization defined in constants.py as DEFAULT_TOKEN_PATH, else gets token from file
     passed as argument. If file with token doesn't exist it checks if virtual variable DTCLI_API_TOKEN
     exist and returns token if so or error if not.
     """
     try:
         if value == '-':
-            value = DEFAULT_TOKEN_PATH
+            value = const.DEFAULT_TOKEN_PATH
 
         with open(value) as f:
             try:
@@ -139,15 +138,17 @@ tenant_url = click.option(
 )
 
 
-def compose_click_decorators_2(a, b) -> "decorator":
+# TODO: type it correctly
+def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
     def wrapper(f):
         return a(b(f))
     return wrapper
 
 
-import functools
 T = TypeVar("T")
 U = TypeVar("U")
+
+
 def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
     @functools.wraps(f)
     def wrapper(_, __, v):
@@ -162,8 +163,7 @@ requires_tenant = compose_click_decorators_2(api_token, tenant_url)
 @click.version_option(version=__version__)
 def main():
     """
-    Dynatrace CLI is a command line utility that assists in signing, building and uploading extensions
-    for Dynatrace Extensions 2.0 framework
+    Dynatrace CLI is a command line utility that assists in signing, building and uploading extensions for Dynatrace Extensions 2.0 framework.
     """
     pass
 
@@ -171,8 +171,7 @@ def main():
 @main.group(aliases=["extensions", "ext"])
 def extension():
     """
-    Set of utilities for signing, building and uploading extensions
-
+    Set of utilities for signing, building and uploading extensions.
 
     \b
     Example flow:
@@ -189,8 +188,8 @@ def extension_dev():
 @extension.command(
     help="Creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
-@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
-@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path")
+@click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
+@click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
     "--ca-subject",
     callback=validate_parse_subject,
@@ -213,14 +212,15 @@ def extension_dev():
     is_flag=True,
     is_eager=True,
     help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
 @click.option("--force", is_flag=True, help="Overwrites already existing CA key and certificate")
 @click.option(
     "--days-valid",
-    default=DEFAULT_CERT_VALIDITY,
+    default=const.DEFAULT_CERT_VALIDITY,
     show_default=True,
     type=int,
     help="Number of days certificate will be valid",
@@ -237,8 +237,8 @@ def genca(**kwargs):
 
 
 @extension.command(help="Creates developer key and certificate used for extension signing")
-@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate input path")
-@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key input path")
+@click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate input path")
+@click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key input path")
 @click.option(
     "--ca-passphrase",
     type=str,
@@ -253,12 +253,13 @@ def genca(**kwargs):
     is_flag=True,
     is_eager=True,
     help="Skips prompt for CA private key encryption passphrase",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
-@click.option("--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
-@click.option("--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
+@click.option("--dev-cert", default=const.DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
+@click.option("--dev-key", default=const.DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
 @click.option(
     "--dev-passphrase",
     type=str,
@@ -274,8 +275,9 @@ def genca(**kwargs):
     is_flag=True,
     is_eager=True,
     help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
 @click.option(
@@ -287,7 +289,7 @@ def genca(**kwargs):
 )
 @click.option(
     "--days-valid",
-    default=DEFAULT_CERT_VALIDITY,
+    default=const.DEFAULT_CERT_VALIDITY,
     show_default=True,
     type=int,
     help="Number of days certificate will be valid",
@@ -299,7 +301,7 @@ def gendevcert(**kwargs):
         kwargs["dev_cert"],
         kwargs["dev_key"],
         kwargs["dev_subject"],
-        datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        datetime.datetime.today() + datetime.timedelta(days=kwargs["days_valid"]),
         kwargs["ca_passphrase"],
         kwargs["dev_passphrase"],
     )
@@ -342,7 +344,7 @@ def gendevcert(**kwargs):
 )
 @click.option(
     "--days-valid",
-    default=defaults.DEFAULT_CERT_VALIDITY,
+    default=const.DEFAULT_CERT_VALIDITY,
     show_default=True,
     # TODO: more restrictive validation
     type=int,
@@ -359,15 +361,15 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     subject_kv = [
         ("CN", name),
     ]
-    
+
     if company:
         subject_kv.append(("O", company))
     # TODO: get additional keys - via an additional n-argument
 
     # TODO: is this the correct format?
-    subject = "".join(map(lambda t: f"/{t[0]}={t[1]}", subject_kv))
+    subject = "".join(f"/{t[0]}={t[1]}" for t in subject_kv)
     # TODO: maybe I can just unparse? What about order?
-    subject=validate_parse_subject(None, None, subject)
+    subject = validate_parse_subject(None, None, subject)
     # TODO: test logic after clayring that
 
     # TODO: see sign
@@ -379,17 +381,18 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
         ca_key_file_path=ca_key,
         destination=destination,
         subject=subject,
-        not_valid_after = datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        not_valid_after=datetime.datetime.today() + datetime.timedelta(days=days_valid),
         # TODO: remove this after deprecating other certgen + refactoring
         dev_cert_file_path=None,
         dev_key_file_path=None,
     )
 
+
 @extension.command(
     help="Creates CA key, CA certificate, developer key and developer certificate used for extension signing"
 )
-@click.option("--ca-cert", default=DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
-@click.option("--ca-key", default=DEFAULT_CA_KEY, show_default=True, help="CA key output path")
+@click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
+@click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
     "--ca-passphrase",
     type=str,
@@ -405,8 +408,9 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     is_flag=True,
     is_eager=True,
     help="Skips prompt for CA private key encryption passphrase - private key is not encrypted",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "ca_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
 @click.option(
@@ -417,8 +421,8 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     help="certificate subject. Accepted format is /key0=value0/key1=value1/...",
 )
 @click.option("--force", is_flag=True, help="overwrites already existing CA key and certificate")
-@click.option("--dev-cert", default=DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
-@click.option("--dev-key", default=DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
+@click.option("--dev-cert", default=const.DEFAULT_DEV_CERT, show_default=True, help="Developer certificate output path")
+@click.option("--dev-key", default=const.DEFAULT_DEV_KEY, show_default=True, help="Developer key output path")
 @click.option(
     "--dev-passphrase",
     type=str,
@@ -434,8 +438,9 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     is_flag=True,
     is_eager=True,
     help="Skips prompt for developer private key encryption passphrase - private key is not encrypted",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
 @click.option(
@@ -447,7 +452,7 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
 )
 @click.option(
     "--days-valid",
-    default=DEFAULT_CERT_VALIDITY,
+    default=const.DEFAULT_CERT_VALIDITY,
     show_default=True,
     type=int,
     help="Number of days certificate will be valid",
@@ -474,29 +479,29 @@ def gencerts(**kwargs):
 
 
 @extension.command(
-    help=f"Build and sign extension package from the given extension directory (default: {DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
+    help=f"Build and sign extension package from the given extension directory (default: {const.DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
 )
 @click.option(
     "--extension-directory",
-    default=DEFAULT_EXTENSION_DIR,
+    default=const.DEFAULT_EXTENSION_DIR,
     show_default=True,
     help="Directory where the `extension.yaml' and other extension files are located",
 )
 @click.option(
     "--target-directory",
-    default=DEFAULT_TARGET_PATH,
+    default=const.DEFAULT_TARGET_PATH,
     show_default=True,
     help="Directory where extension package should be written",
 )
 @click.option(
     "--certificate",
-    default=DEFAULT_DEV_CERT,
+    default=const.DEFAULT_DEV_CERT,
     show_default=True,
     help="Developer certificate used for signing",
 )
 @click.option(
     "--private-key",
-    default=DEFAULT_DEV_KEY,
+    default=const.DEFAULT_DEV_KEY,
     show_default=True,
     help="Developer private key used for signing",
 )
@@ -514,8 +519,9 @@ def gencerts(**kwargs):
     is_flag=True,
     is_eager=True,
     help="Skips prompt for developer private key encryption passphrase",
+    # TODO: this is borderline unreadable - refactor
     callback=lambda c, p, v: edit_other_option_if_true(
-        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)
+        c, p, v, "dev_passphrase", lambda param: setattr(param, "prompt", None)  # noqa: B010
     ),
 )
 @click.option(
@@ -526,11 +532,11 @@ def gencerts(**kwargs):
 )
 def build(**kwargs):
     extension_dir_path = kwargs["extension_directory"]
-    require_dir_exists(extension_dir_path)
+    const.require_dir_exists(extension_dir_path)
 
     target_dir_path = kwargs["target_directory"]
     if os.path.exists(target_dir_path):
-        require_dir_exists(target_dir_path)
+        const.require_dir_exists(target_dir_path)
         if not os.path.isdir(target_dir_path):
             print("%s is not a directory, aborting!" % target_dir_path)
             return
@@ -538,13 +544,13 @@ def build(**kwargs):
         print("Creating target directory: %s" % target_dir_path)
         os.makedirs(target_dir_path, exist_ok=True)
 
-    extension_zip_path = os.path.join(target_dir_path, EXTENSION_ZIP)
-    extension_zip_sig_path = os.path.join(target_dir_path, EXTENSION_ZIP_SIG)
+    extension_zip_path = os.path.join(target_dir_path, const.EXTENSION_ZIP)
+    extension_zip_sig_path = os.path.join(target_dir_path, const.EXTENSION_ZIP_SIG)
 
     certificate_file_path = kwargs["certificate"]
-    require_file_exists(certificate_file_path)
+    utils.require_file_exists(certificate_file_path)
     private_key_file_path = kwargs["private_key"]
-    require_file_exists(private_key_file_path)
+    utils.require_file_exists(private_key_file_path)
 
     building.build_and_sign(
         extension_dir_path,
@@ -563,7 +569,7 @@ def build(**kwargs):
     "--src",
     "--source",
     "source",
-    default=defaults.DEFAULT_EXTENSION_DIR2,
+    default=const.DEFAULT_EXTENSION_DIR2,
     type=click.Path(exists=True, file_okay=False),
     callback=mk_click_callback(Path),
     show_default=True,
@@ -574,7 +580,7 @@ def build(**kwargs):
     "--output",
     "destination",
     type=click.Path(writable=True),
-    default=str(defaults.DEFAULT_BUILD_OUTPUT),
+    default=str(const.DEFAULT_BUILD_OUTPUT),
     callback=mk_click_callback(Path),
     show_default=True,
     help="Location where the extension package will be written",
@@ -589,7 +595,7 @@ def build(**kwargs):
 )
 def assemble(source, destination, force):
     """
-    Build extension package
+    Build extension package.
     """
     if destination.exists() and not force:
         raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
@@ -602,7 +608,7 @@ def assemble(source, destination, force):
     "--src",
     "--source",
     "payload",
-    default=str(defaults.DEFAULT_BUILD_OUTPUT),
+    default=str(const.DEFAULT_BUILD_OUTPUT),
     type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     show_default=True,
@@ -611,7 +617,7 @@ def assemble(source, destination, force):
 @click.option(
     "--key",
     "fused_keycert",
-    default=str(defaults.DEFAULT_KEYCERT_PATH),
+    default=str(const.DEFAULT_KEYCERT_PATH),
     type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     show_default=True,
@@ -623,7 +629,7 @@ def assemble(source, destination, force):
     "destination",
     type=click.Path(writable=True),
     callback=mk_click_callback(Path),
-    default=str(Path(defaults.DEFAULT_TARGET_PATH) / defaults.EXTENSION_ZIP_BUNDLE),
+    default=str(Path(const.DEFAULT_TARGET_PATH) / const.EXTENSION_ZIP_BUNDLE),
     show_default=True,
     help="Location where signed extension package will be written",
 )
@@ -639,24 +645,24 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
     """
     Produce signed extension package.
 
-    This command requires key in the fused key-certificate format (so: one file containing both key and certificate). If for whatever reason you'd like to seperate those please reffer to the `build` command. 
+    This command requires key in the fused key-certificate format (so: one file containing both key and certificate). If for whatever reason you'd like to seperate those please reffer to the `build` command.
 
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
 
     def is_key_permissions_ok():
-        permissions = acquire_file_dac(fused_keycert) 
+        permissions = utils.acquire_file_dac(fused_keycert)
 
         # Windows doesn't distinguish between user, group and other in that way
         if platform.system() == "Windows":
-            click.echo(f"Warning: skipping file permission check", err=True)
+            click.echo("Warning: skipping file permission check", err=True)
             return True
         else:
-            return permissions == defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS
+            return permissions == const.REQUIRED_PRIVATE_KEY_PERMISSIONS
 
     if not is_key_permissions_ok() and not force:
-        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend {oct(defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(defaults.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
+        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
 
     if destination.exists():
         if force:
@@ -682,7 +688,7 @@ def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
 )
 def validate(**kwargs):
     extension_zip = kwargs["extension_zip"]
-    require_file_exists(extension_zip)
+    utils.require_file_exists(extension_zip)
     server_api.validate(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
@@ -696,7 +702,7 @@ def validate(**kwargs):
 )
 def upload(**kwargs):
     extension_zip = kwargs["extension_zip"]
-    require_file_exists(extension_zip)
+    utils.require_file_exists(extension_zip)
     server_api.upload(extension_zip, kwargs["tenant_url"], kwargs["api_token"])
 
 
@@ -724,7 +730,8 @@ def alert(**kwargs):
 @api_token
 @click.option(
     "--download-dir",
-    default=DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
+    # TODO: this should be path
+    default=const.DEFAULT_SCHEMAS_DOWNLOAD_DIR, show_default=True,
     help="Directory where downloaded schema files will be saved.",
 )
 def schemas(**kwargs):
@@ -734,32 +741,39 @@ def schemas(**kwargs):
     print(f"Downloaded schemas for version {version}")
 
 
-@extension.command(
-    help="Delete extension from Dynatrace Cluster, Extension e.g. custom:com.dynatrace.extension.extension-name"
-)
+@extension.command()
 @click.argument(
-    "extension", nargs=1
+    "extension",
+    nargs=1,
 )
 @tenant_url
 @api_token
 def delete(**kwargs):
+    """
+    Delete extension from Dynatrace Cluster.
+
+    Example: custom:com.dynatrace.extension.extension-name
+    """
     token = kwargs["api_token_path"]
     delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
 
 
-@extension_dev.command(
-    help="Command packs python package as a datasource. It uses pip to download all dependencies and create whl files"
-)
+@extension_dev.command()
 @click.argument(
     "path-to-setup-py",
 )
 @click.option("--additional-libraries-dir", default=None, help="Path to folder containing additional directories")
 @click.option(
     "--extension-directory",
-    default=DEFAULT_EXTENSION_DIR,
-    help="Directory where extension files are. Default: " + DEFAULT_EXTENSION_DIR,
+    default=const.DEFAULT_EXTENSION_DIR,
+    help="Directory where extension files are. Default: " + const.DEFAULT_EXTENSION_DIR,
 )
 def prepare_python(path_to_setup_py, **kwargs):
+    """
+    Pack python package as a datasource.
+
+    It uses pip to download all dependencies and create whl files
+    """
     additional_libraries_dir = kwargs.get("additional_libraries_dir", None)
     extension_directory = kwargs["extension_directory"]
 

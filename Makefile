@@ -1,6 +1,15 @@
 setup:  ## prepare the environment
 	poetry install
 
+lint:
+	poetry run flake8 dtcli/scripts
+	# TODO: reenable those pesky warnings in .flake8
+	# TODO: run for entire source code
+	# TODO: bump CI
+	#poetry run pytest --mypy dtcli --strict
+	# TODO: enable
+	# TODO: bump CI
+
 test:
 	poetry run pytest -x
 
