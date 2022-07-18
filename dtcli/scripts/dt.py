@@ -467,8 +467,7 @@ def gencerts(**kwargs):
         kwargs["dev_cert"],
         kwargs["dev_key"],
         kwargs["dev_subject"],
-        kwargs["days_valid"],
-        datetime.datetime.today() + datetime.timedelta(days=days_valid),
+        datetime.datetime.today() + datetime.timedelta(days=kwargs["days_valid"]),
         kwargs["ca_passphrase"],
         kwargs["dev_passphrase"],
     )
