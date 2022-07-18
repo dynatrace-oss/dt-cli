@@ -1,0 +1,25 @@
+# vim:set syntax=toml:
+[flake8]
+max-line-length = 120
+ignore=
+    # require module / package docstring
+    # we're not really using that
+    D104,
+    D100,
+    # one-line docstring formatting
+    # it's anyoing when you actually want to add more
+    D200,
+    # no machine shall compel human speech
+    # it also doesn't work all that well
+    D401,
+    # practicality beats purity
+    I101,
+    # for now
+    # TODO: do it!
+    E501,
+    D103
+per-file-ignores =
+    # imported but unused
+    __init__.py: F401
+    # click uses backslash characters in a clever way
+    dtcli/scripts/dt.py: D301

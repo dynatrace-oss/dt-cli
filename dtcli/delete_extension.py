@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import Dict, Set, Optional, List
+from typing import Dict, Set, Optional, List, Any
 from pathlib import Path
 
 
@@ -38,7 +38,8 @@ def acquire_state(client: DynatraceAPIClient) -> State:
         _extensions_data = client.acquire_extension_versions(e)
         extensions_data += _extensions_data
 
-    extensions = defaultdict(dict)
+    # TODO: is this really any?
+    extensions: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for e in extensions_data:
         name, version = e["extensionName"], e["version"]
         extensions[name][version] = {"monitoring_configurations": []}
@@ -62,7 +63,8 @@ def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> S
         raise Exception("Extension doesn't exist")
 
     versions = client.acquire_extension_versions(extension)
-    extension_data = defaultdict(dict)
+    # TODO: is this really any?
+    extension_data: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for e in versions:
         name, version = e["extensionName"], e["version"]
         extension_data[name][version] = {"monitoring_configurations": []}
