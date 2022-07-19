@@ -1,7 +1,9 @@
-import json
+import io
 import os
+import zipfile
+
 import requests as _requests_impl
-import zipfile, io
+
 
 # TODO: support pagination
 

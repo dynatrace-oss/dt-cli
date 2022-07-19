@@ -1,7 +1,5 @@
-import json
 from collections import defaultdict
 from typing import Dict, Set, Optional, List, Any
-from pathlib import Path
 
 
 from dtcli.api import DynatraceAPIClient

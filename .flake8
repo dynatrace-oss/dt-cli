@@ -19,9 +19,9 @@ ignore=
     D901,
     E722, B001, B901, B902,
     F841,
-    # easily fixable with pycharm
-    E401,I201,I100,I201,I202,
-    F401,
+    # reversing order of 'from dtcli import scripts' and
+    # 'from .version import __version__' generates test errors
+    I100
     # TODO: do it!
     C413,
     E501,

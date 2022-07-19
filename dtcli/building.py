@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import glob
 import os
 import os.path
 import zipfile
-import datetime
 from pathlib import Path
 
 import yaml
 
-from . import utils
-from . import signing
 from . import __version__
-
+from . import signing
+from . import utils
 from .constants import EXTENSION_YAML, EXTENSION_ZIP, EXTENSION_ZIP_SIG
 
 

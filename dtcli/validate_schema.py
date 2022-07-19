@@ -1,9 +1,10 @@
 import json
-import jsonschema
 import pathlib
 from pathlib import Path
-import sys
 from typing import List, Union, Callable
+
+import jsonschema
+
 import yaml
 
 

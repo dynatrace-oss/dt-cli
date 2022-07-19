@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import stat
 import os.path
+import stat
 from pathlib import Path
 
 
