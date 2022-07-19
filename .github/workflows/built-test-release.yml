@@ -135,8 +135,8 @@ jobs:
         run: |
           docker run \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
-            # TODO: change to make
             poetry run flake8 dtcli
+            # TODO: change above to make
 
       - name: Run test coverage report
         run: |
