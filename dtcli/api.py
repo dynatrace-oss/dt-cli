@@ -3,9 +3,11 @@ import os
 import zipfile
 
 import requests as _requests_impl
+import requests.exceptions
 
 
 # TODO: support pagination
+
 
 class DynatraceAPIClient:
     def __init__(self, url, token, requests = None):
@@ -48,11 +50,11 @@ class DynatraceAPIClient:
         r = self.requests.delete(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations/{configuration_id}", headers=self.headers)
         try:
             r.raise_for_status()
-        except:
+        except requests.HTTPError:
             err = ""
             try:
                 err = r.json()
-            except:
+            except requests.exceptions.JSONDecodeError:
                 pass
 
             print(err)
@@ -63,7 +65,7 @@ class DynatraceAPIClient:
         err = r.json()
         try:
             r.raise_for_status()
-        except:
+        except requests.HTTPError:
             print(err)
             if r.code != 404:
                 raise
@@ -73,7 +75,7 @@ class DynatraceAPIClient:
         err = r.json()
         try:
             r.raise_for_status()
-        except:
+        except requests.HTTPError:
             print(err)
             if r.code != 404:
                 raise
@@ -138,6 +140,6 @@ class DynatraceAPIClient:
         err = r.json()
         try:
             r.raise_for_status()
-        except:
+        except requests.HTTPError:
             print(err)
             raise

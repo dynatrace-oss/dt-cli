@@ -28,7 +28,7 @@ def validate(extension_zip_file, tenant_url, api_token):
             )
             response.raise_for_status()
             print(f"Extension validation successful!")
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.HTTPError:
             print(f"Extension validation failed!")
             raise dtcliutils.ExtensionValidationError(response.text)
 
@@ -44,6 +44,6 @@ def upload(extension_zip_file, tenant_url, api_token):
             )
             response.raise_for_status()
             print(f"Extension upload successful!")
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.HTTPError:
             print(f"Extension upload failed!")
             raise dtcliutils.ExtensionValidationError(response.text)

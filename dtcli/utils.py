@@ -76,7 +76,7 @@ def remove_files(file_paths):
     for file_path in file_paths:
         try:
             os.remove(file_path)
-        except:
+        except OSError:
             print("Failed to remove %s" % file_path)
 
 

@@ -16,12 +16,7 @@ ignore=
     I101,
     # for now
     # TODO: do it fast
-    D901,
-    E722, B001, B901, B902,
-    F841,
-    # reversing order of 'from dtcli import scripts' and
-    # 'from .version import __version__' generates test errors
-    I100
+    B902,
     # TODO: do it!
     C413,
     E501,
@@ -43,3 +38,5 @@ per-file-ignores =
     __init__.py: F401
     # click uses backslash characters in a clever way
     dtcli/scripts/dt.py: D301
+    # otherwise cyclic import
+    dtcli/__init__.py: I100, F401
