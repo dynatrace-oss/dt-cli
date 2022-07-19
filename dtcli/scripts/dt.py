@@ -789,8 +789,8 @@ def validate_schema(instance, **kwargs):
             print(f'path: {e["path"]}', file=sys.stderr)
             print(f'cause: {e["cause"]}', file=sys.stderr)
     if invalid:
-        print(f"{5* '-'} {i + 1} errors total, aborting! {5* '-'}", file=sys.stderr)
-    exit(invalid)
+        print(f"{30 * '-'}", file=sys.stderr)
+        raise click.ClickException(f"{i + 1} validation errors total, aborting!")
 
 
 @extension_dev.command()
