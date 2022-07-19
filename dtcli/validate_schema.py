@@ -18,12 +18,12 @@ def backtrack_yaml_location(path: List[Union[int, str]], ast: YamlAST) -> yaml.e
     at AST level without retaining source maps.
     """
     if not path:
-        return ast.start_mark 
+        return ast.start_mark
 
     chunk, *rest = path
 
     if isinstance(chunk, str):
-        key_value_pairs = ast.value 
+        key_value_pairs = ast.value
         for k,v in key_value_pairs:
             assert isinstance(k, yaml.ScalarNode), "keys are scalar nodes"
             if k.value == chunk:
@@ -59,7 +59,7 @@ def validate_schema(instance_object: Path, schema_entrypoint: Path, warn: Callab
     resolver = jsonschema.validators.RefResolver.from_schema(s, store=schema_store)
 
     validator_cls = jsonschema.validators.validator_for(s)
-    validator_cls.check_schema(s) # against META_SCHEMA
+    validator_cls.check_schema(s)  # against META_SCHEMA
     validator = validator_cls(s, resolver=resolver)
 
     with open(instance_object, "r") as f:
