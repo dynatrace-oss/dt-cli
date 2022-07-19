@@ -764,14 +764,14 @@ def delete(**kwargs):
 )
 @click.option(
     "--instance",
-    type=click.Path(writable=True),
+    type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     default=const.EXTENSION_YAML, show_default=True,
     help="Extension file",
 )
 @click.option(
     "--schema-entrypoint",
-    type=click.Path(writable=True),
+    type=click.Path(exists=True, dir_okay=False),
     callback=mk_click_callback(Path),
     default=const.SCHEMAS_ENTRYPOINT, show_default=True,
     help="Schema entrypoint. Assumption: All schema files are in the same directory.",
