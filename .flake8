@@ -18,12 +18,10 @@ ignore=
     # TODO: do it fast
     B902,
     # TODO: do it!
-    C413,
     E501,
     D103,
     D101,
     D102, D107, D105,
-    D400, D205, D202,
     F541,
     E251, E203, E271,
     E231,

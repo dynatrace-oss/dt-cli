@@ -23,7 +23,7 @@ class State:
 
         all_versions: Set[str] = set(self[extension_fqdn].keys())
 
-        return list(sorted(all_versions - exclude))
+        return sorted(all_versions - exclude)
 
     def as_dict(self):
         return self.d
@@ -115,7 +115,7 @@ def wipe_extension(client, state, extension_fqdn: str):
 
 # TODO: split arguments that will be usefull with all commands (tenant, secrets)
 def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
-    """Wipe single extension version
+    """Wipe single extension version.
 
     Example: ... 'com.dynatrace.palo-alto.generic' '0.1.5' --tenant lwp00649 --secrets-path ./secrets
     """
