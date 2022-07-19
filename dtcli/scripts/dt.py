@@ -533,11 +533,11 @@ def gencerts(**kwargs):
 )
 def build(**kwargs):
     extension_dir_path = kwargs["extension_directory"]
-    const.require_dir_exists(extension_dir_path)
+    utils.require_dir_exists(extension_dir_path)
 
     target_dir_path = kwargs["target_directory"]
     if os.path.exists(target_dir_path):
-        const.require_dir_exists(target_dir_path)
+        utils.require_dir_exists(target_dir_path)
         if not os.path.isdir(target_dir_path):
             print("%s is not a directory, aborting!" % target_dir_path)
             return

@@ -276,4 +276,4 @@ def sign_file(file_path, signature_file_path, certificate_file_path, private_key
             fp.write(pem_bytes)
             print("Wrote signature file %s" % signature_file_path)
     else:
-       return pem_bytes 
+        return pem_bytes
