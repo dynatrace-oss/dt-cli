@@ -1,9 +1,10 @@
 import json
-import jsonschema
 import pathlib
 from pathlib import Path
-import sys
 from typing import List, Union, Callable
+
+import jsonschema
+
 import yaml
 
 
@@ -24,7 +25,7 @@ def backtrack_yaml_location(path: List[Union[int, str]], ast: YamlAST) -> yaml.e
 
     if isinstance(chunk, str):
         key_value_pairs = ast.value
-        for k,v in key_value_pairs:
+        for k, v in key_value_pairs:
             assert isinstance(k, yaml.ScalarNode), "keys are scalar nodes"
             if k.value == chunk:
                 return backtrack_yaml_location(rest, v)
@@ -69,11 +70,11 @@ def validate_schema(instance_object: Path, schema_entrypoint: Path, warn: Callab
         err_loc = backtrack_yaml_location(error.absolute_path, file)
 
         # TODO: add typo finder for some cases - like enum mismatch
-        return  {
-            "line" : err_loc.line,
-            "column" : err_loc.column,
-            "path" : ".".join(map(str, error.absolute_path)),
-            "cause" : error.message
+        return {
+            "line": err_loc.line,
+            "column": err_loc.column,
+            "path": ".".join(map(str, error.absolute_path)),
+            "cause": error.message
         }
 
     return list(map(process_validation_error, validator.iter_errors(instance)))

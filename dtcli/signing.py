@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import datetime
+import os
 
 from asn1crypto import cms, util, x509, core, pem
+
 from cryptography import x509 as crypto_x509
-from cryptography.x509.oid import NameOID
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa, utils
-from cryptography.hazmat.backends import default_backend
+from cryptography.x509.oid import NameOID
 
-from . import utils as dtcliutils
 from . import constants
+from . import utils as dtcliutils
 
 
 CHUNK_SIZE = 1024 * 1024
@@ -123,7 +124,7 @@ def generate_cert(
     if destination:
         dev_cert_file_path = destination
         dev_key_file_path = destination
-        flags =  "a"
+        flags = "a"
     else:
         flags = "w"
 
@@ -139,7 +140,6 @@ def generate_cert(
     subject_name = _generate_x509_name(subject)
     if ca_cert.issuer == subject_name:
         raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
-
 
     print("Generating developer certificate...")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)

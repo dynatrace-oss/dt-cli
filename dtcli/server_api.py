@@ -27,9 +27,9 @@ def validate(extension_zip_file, tenant_url, api_token):
                 url, files={"file": (extension_zip_file, extzf, "application/zip")}, headers=headers
             )
             response.raise_for_status()
-            print(f"Extension validation successful!")
-        except requests.exceptions.HTTPError as e:
-            print(f"Extension validation failed!")
+            print("Extension validation successful!")
+        except requests.exceptions.HTTPError:
+            print("Extension validation failed!")
             raise dtcliutils.ExtensionValidationError(response.text)
 
 
@@ -43,7 +43,7 @@ def upload(extension_zip_file, tenant_url, api_token):
                 url, files={"file": (extension_zip_file, extzf, "application/zip")}, headers=headers
             )
             response.raise_for_status()
-            print(f"Extension upload successful!")
-        except requests.exceptions.HTTPError as e:
-            print(f"Extension upload failed!")
+            print("Extension upload successful!")
+        except requests.exceptions.HTTPError:
+            print("Extension upload failed!")
             raise dtcliutils.ExtensionValidationError(response.text)

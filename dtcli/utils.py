@@ -43,6 +43,7 @@ def require_extension_name_valid(extension_name):
 
 def check_file_exists(file_path, exception_cls=ExtensionBuildError, warn_overwrite=True):
     """Returns True and prints a message if file under given path exists and is a real file.
+
     In case the path represents a directory, exception given in the exception_cls parameter will be thrown.
     In case there's no file under the given path returns False.
     """
@@ -76,7 +77,7 @@ def remove_files(file_paths):
     for file_path in file_paths:
         try:
             os.remove(file_path)
-        except:
+        except OSError:
             print("Failed to remove %s" % file_path)
 
 

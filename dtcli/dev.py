@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
-import shutil
-import os
 
 
 def pack_python_extension(setup_path, target_path, additional_path):
