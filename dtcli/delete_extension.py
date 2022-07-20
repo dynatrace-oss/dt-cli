@@ -1,14 +1,14 @@
 from collections import defaultdict
 from typing import Dict, Set, Optional, List, Any
 
-
 from dtcli.api import DynatraceAPIClient
+
 
 class State:
     def __init__(self, d):
         self.d = d
 
-    def __getitem__(self,key):
+    def __getitem__(self, key):
         return self.d[key]
 
     def __contains__(self, key):
@@ -27,6 +27,7 @@ class State:
 
     def as_dict(self):
         return self.d
+
 
 def acquire_state(client: DynatraceAPIClient) -> State:
     extensions_listing = list(map(lambda e: e["extensionName"], client.acquire_extensions()))
@@ -47,12 +48,14 @@ def acquire_state(client: DynatraceAPIClient) -> State:
         monitoring_configurations = client.acquire_monitoring_configurations(extension)
 
         if environment_configuration:
-            extensions[extension][environment_configuration["version"]]["environment_configuration"] = environment_configuration
+            extensions[extension][environment_configuration["version"]][
+                "environment_configuration"] = environment_configuration
             for mc in monitoring_configurations:
                 extensions[extension][mc["value"]["version"]]["monitoring_configurations"].append(mc)
 
     s = State(extensions)
     return s
+
 
 def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> State:
     extensions_listing = list(map(lambda e: e["extensionName"], client.acquire_extensions()))
@@ -71,12 +74,14 @@ def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> S
     monitoring_configurations = client.acquire_monitoring_configurations(extension)
 
     if environment_configuration:
-        extension_data[extension][environment_configuration["version"]]["environment_configuration"] = environment_configuration
+        extension_data[extension][environment_configuration["version"]][
+            "environment_configuration"] = environment_configuration
         for mc in monitoring_configurations:
             extension_data[extension][mc["value"]["version"]]["monitoring_configurations"].append(mc)
 
     state = State(extension_data)
     return state
+
 
 def wipe_extension_version(client, state, extension_fqdn: str, version: str):
     assert extension_fqdn in state
@@ -98,6 +103,7 @@ def wipe_extension_version(client, state, extension_fqdn: str, version: str):
             client.delete_environment_configuration(extension_fqdn)
 
     client.delete_extension(extension_fqdn, version)
+
 
 def wipe_extension(client, state, extension_fqdn: str):
     if extension_fqdn not in state:
@@ -127,6 +133,7 @@ def wipe_single_version(fqdn: str, version: str, tenant: str, token_path: str):
     print(state)
 
     wipe_extension_version(client, state, fqdn, version)
+
 
 def wipe(fqdn: str, tenant: str, token: str):
     # TODO: move client creation further up the chain

@@ -21,12 +21,7 @@ ignore=
     D103,
     D101,
     D102, D107, D105,
-    E251, E203, E271,
-    E231,
     R302,
-    E302,
-    E222,
-    E303,
     # TODO: questionable
     C417, C416
 per-file-ignores =

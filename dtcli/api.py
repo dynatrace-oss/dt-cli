@@ -10,7 +10,7 @@ import requests.exceptions
 
 
 class DynatraceAPIClient:
-    def __init__(self, url, token, requests = None):
+    def __init__(self, url, token, requests=None):
         self.url_base = url
         self.headers = {"Authorization": f"Api-Token {token}"}
         self.requests = requests if requests is not None else _requests_impl

@@ -124,7 +124,7 @@ def generate_cert(
     if destination:
         dev_cert_file_path = destination
         dev_key_file_path = destination
-        flags =  "a"
+        flags = "a"
     else:
         flags = "w"
 
@@ -140,7 +140,6 @@ def generate_cert(
     subject_name = _generate_x509_name(subject)
     if ca_cert.issuer == subject_name:
         raise dtcliutils.KeyGenerationError("Certificate subject must be different from its issuer")
-
 
     print("Generating developer certificate...")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
