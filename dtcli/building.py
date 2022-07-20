@@ -37,29 +37,20 @@ def _generate_build_comment():
 
 
 def _zip_extension(extension_dir_path, extension_zip_path):
-
     extension_yaml_path = os.path.join(extension_dir_path, EXTENSION_YAML)
     utils.require_file_exists(extension_yaml_path)
 
     utils.check_file_exists(extension_zip_path)
     print("Building %s from %s" % (extension_zip_path, extension_dir_path))
 
-    try:
-        with zipfile.ZipFile(extension_zip_path, "w") as zf:
+    with zipfile.ZipFile(extension_zip_path, "w") as zf:
 
-            for file_path in glob.glob(os.path.join(extension_dir_path, "**"), recursive=True):
-                if os.path.isdir(file_path):
-                    continue
-                rel_path = os.path.relpath(file_path, extension_dir_path)
-                print("Adding file: %s as %s" % (file_path, rel_path))
-                zf.write(file_path, arcname=rel_path)
-
-    except Exception as e:
-        print(e)
-        raise
-
-    else:
-        print("Wrote %s file" % extension_zip_path)
+        for file_path in glob.glob(os.path.join(extension_dir_path, "**"), recursive=True):
+            if os.path.isdir(file_path):
+                continue
+            rel_path = os.path.relpath(file_path, extension_dir_path)
+            print("Adding file: %s as %s" % (file_path, rel_path))
+            zf.write(file_path, arcname=rel_path)
 
 
 def _package(
@@ -85,16 +76,12 @@ def _package(
 
     extension_file_path = os.path.join(target_dir_path, extension_file_name)
     utils.check_file_exists(extension_file_path)
-    try:
-        with zipfile.ZipFile(extension_file_path, "w") as zf:
-            zf.comment = bytes(_generate_build_comment(), "utf-8")
-            zf.write(extension_zip_path, arcname=EXTENSION_ZIP)
-            zf.write(extension_zip_sig_path, arcname=EXTENSION_ZIP_SIG)
-    except Exception as e:
-        print(e)
-        raise
-    else:
-        print("Wrote %s file" % extension_file_path)
+    with zipfile.ZipFile(extension_file_path, "w") as zf:
+        zf.comment = bytes(_generate_build_comment(), "utf-8")
+        zf.write(extension_zip_path, arcname=EXTENSION_ZIP)
+        zf.write(extension_zip_sig_path, arcname=EXTENSION_ZIP_SIG)
+
+    print("Wrote %s file" % extension_file_path)
 
 
 def build(extension_dir: Path, extension_zip: Path):
@@ -104,7 +91,8 @@ def build(extension_dir: Path, extension_zip: Path):
 
 def sign(payload: Path, destination: Path, fused_keycert: Path):
     # since it's a constant size with regards to the payload it can be safely done in memory
-    pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=fused_keycert, private_key_file_path=fused_keycert, dev_passphrase=None, _no_side_effect=True)
+    pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=fused_keycert,
+                                  private_key_file_path=fused_keycert, dev_passphrase=None, _no_side_effect=True)
 
     with zipfile.ZipFile(destination, "w") as zf:
         zf.comment = bytes(_generate_build_comment(), "utf-8")

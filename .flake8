@@ -16,7 +16,6 @@ ignore=
     I101,
     # for now
     # TODO: do it fast
-    B902,
     # TODO: do it!
     E501,
     D103,
