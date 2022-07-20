@@ -22,7 +22,8 @@ import sys
 from pathlib import Path
 
 import click
-import typer  # noqa: I201
+import requests  # noqa:I201
+import typer  # noqa:I201
 from click_aliases import ClickAliasedGroup  # noqa: I201,I100
 
 import dtcli.constants as const
@@ -31,7 +32,7 @@ from dtcli import building, delete_extension, api, utils, validate_schema as _va
 from dtcli import dev
 from dtcli import server_api
 from dtcli import signing
-from dtcli.click_helpers import mk_click_callback, deprecated
+from dtcli.click_helpers import deprecated, compose_click_decorators_2, mk_click_callback
 from dtcli.scripts.utility import app as utility_app
 
 
@@ -121,9 +122,21 @@ def token_load(ctx, param, value):
         return token
 
 
-def sanitize_url(ctx, param, value):
+def parse_tenant_url(value: str) -> str:
     if value.endswith("/"):
         value = value[:-1]
+
+    def validate_url(url):
+        # pr is needed only to call one function
+        pr = requests.models.PreparedRequest()
+        pr.prepare_url(url, None)
+
+    try:
+        validate_url(value)
+    except requests.exceptions.MissingSchema:
+        click.echo(f"Warning: Invalid URL {value}: No scheme supplied. Defaulting to https, retrying...", err=True)
+        value = "https://" + value
+
     return value
 
 
@@ -134,7 +147,18 @@ api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=Tru
                            )
 
 
-tenant_url = click.option(
+def tenant_error_handler(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except requests.exceptions.ConnectionError as e:
+            err = re.sub(r"\<[\w\s\d\.]+\>:\s|\[[\w\d\s\-]+\]\s", "", str(e.args[0].reason))
+            # TODO Extract to generic handler
+            raise SystemExit(f"Tried url: {e.request.url}\n{err}")
+    return wrapper
+
+tenant_url_click = click.option(  # noqa:E305
     "--tenant-url",
     callback=sanitize_url,
     prompt=True,
@@ -149,6 +173,7 @@ def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
     return wrapper
 
 
+tenant_url = compose_click_decorators_2(tenant_url_click, tenant_error_handler)
 requires_tenant = compose_click_decorators_2(api_token, tenant_url)
 
 
@@ -171,14 +196,17 @@ def extension():
         gencerts -> build -> upload
     """
     pass
+
 # TODO: turn completion to True when implementing completion and somehow merge it with click
 # see: https://github.com/tiangolo/typer/issues/141
 typer_extension = typer.Typer(add_completion=False)  # noqa: E305
 
 
+
 @main.group(aliases=["extensions_dev", "ext_dev"], hidden=True)
 def extension_dev():
     pass
+
 
 
 # TODO: turn completion to True when implementing completion and somehow merge it with click
@@ -191,6 +219,7 @@ def utility_callback():
     Former internal scripts outsourced for the greater good.
     """
     pass
+
 
 
 @extension.command(
