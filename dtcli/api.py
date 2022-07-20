@@ -16,7 +16,8 @@ class DynatraceAPIClient:
         self.requests = requests if requests is not None else _requests_impl
 
     def acquire_alert(self, alert_id: str) -> dict:
-        r = self.requests.get(self.url_base + f"/api/config/v1/anomalyDetection/metricEvents/" + alert_id, headers=self.headers)
+        r = self.requests.get(self.url_base + f"/api/config/v1/anomalyDetection/metricEvents/{alert_id}",
+                              headers=self.headers)
         r.raise_for_status()
         alert = r.json()
         return alert
@@ -36,7 +37,7 @@ class DynatraceAPIClient:
         return r.json()
 
     def acquire_extensions(self):
-        r = self.requests.get(self.url_base + f"/api/v2/extensions", headers=self.headers)
+        r = self.requests.get(f"{self.url_base}/api/v2/extensions", headers=self.headers)
         r.raise_for_status()
         return r.json()["extensions"]
 
