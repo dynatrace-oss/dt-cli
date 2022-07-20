@@ -5,9 +5,15 @@ lint:
 	poetry run flake8 dtcli
 	# TODO: reenable those pesky warnings in .flake8
 	# TODO: bump CI for entire source code
-	#poetry run pytest --mypy dtcli --strict
-	# TODO: enable
+
+type-check:
+	#poetry run mypy --strict dtcli/scripts/dt.py
+	# TODO: enable all errors
+	! poetry run mypy --strict dtcli | grep 'Module has no attribute'
+	#poetry run mypy --strict dtcli
+	# TODO: enable all error all files
 	# TODO: bump CI
+	# TODO: fix colors!
 
 test:
 	poetry run pytest -x
