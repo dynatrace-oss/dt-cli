@@ -1,7 +1,7 @@
 import io
+import json
 import os
 import zipfile
-import json
 
 import requests as _requests_impl
 import requests.exceptions
