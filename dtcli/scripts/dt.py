@@ -20,6 +20,7 @@ import platform
 import re
 import sys
 from pathlib import Path
+import requests
 from typing import Callable, Any, TypeVar
 
 import click
@@ -33,6 +34,17 @@ from dtcli import server_api
 from dtcli import signing
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+
+T = TypeVar("T")
+U = TypeVar("U")
+
+
+def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
+    @functools.wraps(f)
+    def wrapper(_, __, v):
+        return f(v)
+    return wrapper
 
 
 def validate_parse_subject(ctx, param, value):
@@ -118,9 +130,16 @@ def token_load(ctx, param, value):
         return token
 
 
-def sanitize_url(ctx, param, value):
+def parse_tenant_url(value: str) -> str:
     if value.endswith("/"):
         value = value[:-1]
+    pr = requests.models.PreparedRequest()
+    try:
+        pr.prepare_url(value, None)
+    except requests.exceptions.MissingSchema as e:
+        click.echo(f"{e}. Https:// will be added to URL and retried.", err=True)
+        value = "https://" + value
+
     return value
 
 
@@ -133,7 +152,7 @@ api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=Tru
 
 tenant_url = click.option(
     "--tenant-url",
-    callback=sanitize_url,
+    callback=mk_click_callback(parse_tenant_url),
     prompt=True,
     help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
@@ -145,16 +164,6 @@ def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
         return a(b(f))
     return wrapper
 
-
-T = TypeVar("T")
-U = TypeVar("U")
-
-
-def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
-    @functools.wraps(f)
-    def wrapper(_, __, v):
-        return f(v)
-    return wrapper
 
 
 requires_tenant = compose_click_decorators_2(api_token, tenant_url)
