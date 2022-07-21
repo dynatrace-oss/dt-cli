@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import zipfile
 
@@ -55,7 +56,7 @@ class DynatraceAPIClient:
             err = ""
             try:
                 err = r.json()
-            except requests.exceptions.JSONDecodeError:
+            except json.decoder.JSONDecodeError:
                 pass
 
             print(err)

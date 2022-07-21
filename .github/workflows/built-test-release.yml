@@ -129,7 +129,7 @@ jobs:
         run: |
           docker run \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
-            poetry run pytest --mypy dtcli --strict || true
+            bash -c '! poetry run mypy --strict dtcli | grep "Module has no attribute"'
 
       - name: Run flake8 lint checker
         run: |
