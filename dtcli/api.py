@@ -1,3 +1,4 @@
+import click
 import json
 import os
 import requests as _requests_impl
@@ -84,7 +85,7 @@ class DynatraceAPIClient:
         try:
             r = self.requests.get(self.url_base + "/api/v2/extensions/schemas", headers=self.headers)
         except self.requests.exceptions.ConnectionError as e:
-            raise SystemExit(e)
+            raise click.BadParameter(e)
 
         r.raise_for_status()
         versions = r.json().get("versions", [])
