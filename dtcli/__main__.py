@@ -1,4 +1,9 @@
 import dtcli
 
-if __name__ == "__main__":
+
+def main():
     dtcli.scripts.dt.main()
+
+
+if __name__ == "__main__":
+    main()
