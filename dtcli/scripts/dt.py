@@ -133,6 +133,7 @@ def token_load(ctx, param, value):
 def parse_tenant_url(value: str) -> str:
     if value.endswith("/"):
         value = value[:-1]
+
     pr = requests.models.PreparedRequest()
     try:
         pr.prepare_url(value, None)
