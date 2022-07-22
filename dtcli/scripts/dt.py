@@ -20,7 +20,7 @@ import platform
 import re
 import sys
 from pathlib import Path
-from typing import Callable, Any, TypeVar
+# from typing import Callable, Any, TypeVar
 
 import click
 import typer  # noqa: I201
@@ -32,6 +32,7 @@ from dtcli import building, delete_extension, api, utils, validate_schema as _va
 from dtcli import dev
 from dtcli import server_api
 from dtcli import signing
+from dtcli.click_helpers import mk_click_callback, deprecated
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
@@ -144,17 +145,6 @@ tenant_url = click.option(
 def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
     def wrapper(f):
         return a(b(f))
-    return wrapper
-
-
-T = TypeVar("T")
-U = TypeVar("U")
-
-
-def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
-    @functools.wraps(f)
-    def wrapper(_, __, v):
-        return f(v)
     return wrapper
 
 
@@ -391,6 +381,9 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
         dev_cert_file_path=None,
         dev_key_file_path=None,
     )
+
+
+_deprecate_above, _depreacte_below = deprecated("dt ext ble", "also something someting")
 
 
 @extension.command(
