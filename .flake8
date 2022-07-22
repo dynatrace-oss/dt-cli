@@ -27,7 +27,8 @@ ignore=
 per-file-ignores =
     # imported but unused
     __init__.py: F401
-    # click uses backslash characters in a clever way
-    dtcli/scripts/dt.py: D301
+    # D301 - click uses backslash characters in a clever way
+    # B008 - this is fundamental to how Typer works
+    dtcli/scripts/dt.py: D301, B008
     # otherwise cyclic import
     dtcli/__init__.py: I100, F401

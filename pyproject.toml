@@ -18,13 +18,13 @@ version = "1.5.3"
 [tool.poetry.dependencies]
 PyYAML = "^5.4"
 asn1crypto = "^1.4"
-click = "^7.1"
 click-aliases = "^1.0"
 cryptography = "^3.4"
 python = "^3.8"
 wheel = "^0.36"
 requests = "^2.26"
 jsonschema = "^4.7.2"
+typer = "^0.6.1"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^3.5"
@@ -55,7 +55,7 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.8"]
 
 [tool.poetry.scripts]
-dt = 'dtcli.scripts.dt:main'
+dt = 'dtcli.__main__:main'
 
 [tool.black]
 line-length = 120

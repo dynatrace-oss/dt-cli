@@ -23,7 +23,8 @@ from pathlib import Path
 from typing import Callable, Any, TypeVar
 
 import click
-from click_aliases import ClickAliasedGroup  # noqa: I201
+import typer  # noqa: I201
+from click_aliases import ClickAliasedGroup  # noqa: I201,I100
 
 import dtcli.constants as const
 from dtcli import __version__
@@ -179,6 +180,9 @@ def extension():
         gencerts -> build -> upload
     """
     pass
+# TODO: turn completion to True when implementing completion and somehow merge it with click
+# see: https://github.com/tiangolo/typer/issues/141
+typer_extension = typer.Typer(add_completion=False)  # noqa: E305
 
 
 @main.group(aliases=["extensions_dev", "ext_dev"], hidden=True)
@@ -604,45 +608,32 @@ def assemble(source, destination, force):
     building.build(extension_dir=source, extension_zip=destination)
 
 
-@extension.command()
-@click.option(
-    "--src",
-    "--source",
-    "payload",
-    default=str(const.DEFAULT_BUILD_OUTPUT),
-    type=click.Path(exists=True, dir_okay=False),
-    callback=mk_click_callback(Path),
-    show_default=True,
-    help="Path to zipped extension file; payload for signing",
-)
-@click.option(
-    "--key",
-    "fused_keycert",
-    default=str(const.DEFAULT_KEYCERT_PATH),
-    type=click.Path(exists=True, dir_okay=False),
-    callback=mk_click_callback(Path),
-    show_default=True,
-    help="Location of the fused key-certificate for signing with",
-)
-@click.option(
-    "-o",
-    "--output",
-    "destination",
-    type=click.Path(writable=True),
-    callback=mk_click_callback(Path),
-    default=str(Path(const.DEFAULT_TARGET_PATH) / const.EXTENSION_ZIP_BUNDLE),
-    show_default=True,
-    help="Location where signed extension package will be written",
-)
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
-)
-def sign(payload: Path, destination: Path, fused_keycert: Path, force: bool):
+@typer_extension.command()
+def sign(
+    payload: Path = typer.Option(
+        const.DEFAULT_BUILD_OUTPUT,
+        "--src", "--source",
+        exists=True, dir_okay=False,
+        help="Path to zipped extension file; payload for signing",
+    ),
+    destination: Path = typer.Option(
+        const.EXTENSION_ZIP_BUNDLE,
+        "--output", "-o",
+        writable=True,
+        help="Location where signed extension package will be written",
+    ),
+    fused_keycert: Path = typer.Option(
+        const.DEFAULT_KEYCERT_PATH,
+        "--key",
+        exists=True, dir_okay=False,
+        help="Location of the fused key-certificate for signing with",
+    ),
+    # TODO: extract this as a common option
+    force: bool = typer.Option(
+        False,
+        "--force", "-f",
+        help="Ignore subtleties, overwrite without prompt, when in doubt - advance!")
+):
     """
     Produce signed extension package.
 
@@ -817,5 +808,17 @@ def prepare_python(path_to_setup_py, **kwargs):
     )
 
 
-if __name__ == "__main__":
-    main()
+# becasue of how typer works there has to be at least 2 commands for it to create a group
+# TODO: remove this after another command is migrated
+# https://typer.tiangolo.com/tutorial/using-click/#how-typer-works
+@typer_extension.command()
+def please_remove_this_later():
+    pass
+
+
+for name, cmd in typer.main.get_command(typer_extension).commands.items():
+    # TODO: remove this after another command is migrated
+    if name == "please_remove_this_later":
+        continue
+
+    extension.add_command(cmd, name)

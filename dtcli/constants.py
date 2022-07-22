@@ -20,7 +20,6 @@ from pathlib import Path
 
 EXTENSION_YAML = "extension.yaml"
 EXTENSION_ZIP = "extension.zip"
-EXTENSION_ZIP_BUNDLE = "bundle.zip"
 EXTENSION_ZIP_SIG = "extension.zip.sig"
 # TODO: convert to Pathlib
 DEFAULT_TARGET_PATH = os.path.curdir
@@ -30,6 +29,7 @@ DEFAULT_DEV_CERT = os.path.join(os.path.curdir, "developer.pem")
 DEFAULT_DEV_KEY = os.path.join(os.path.curdir, "developer.key")
 DEFAULT_CA_CERT = os.path.join(os.path.curdir, "ca.pem")
 DEFAULT_CA_KEY = os.path.join(os.path.curdir, "ca.key")
+EXTENSION_ZIP_BUNDLE = Path(DEFAULT_TARGET_PATH) / "bundle.zip"
 # TODO: is this a good default value?
 DEFAULT_CERT_VALIDITY = 365 * 3
 DEFAULT_SCHEMAS_DOWNLOAD_DIR = os.path.join(os.path.curdir, "schemas")
