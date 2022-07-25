@@ -231,7 +231,12 @@ def genca(**kwargs):
     )
 
 
+_deprecate_above, _deprecate_below = deprecated("dt ext generate-developer-pem")
+
+
+@_deprecate_above
 @extension.command(help="Creates developer key and certificate used for extension signing")
+@_deprecate_below
 @click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate input path")
 @click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key input path")
 @click.option(
@@ -383,12 +388,14 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     )
 
 
-_deprecate_above, _depreacte_below = deprecated("dt ext ble", "also something someting")
+_deprecate_above, _deprecate_below = deprecated("dt ext genca; dt ext generate-developer-pem", "See: https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/sign-extension#cert for additional details")
 
 
+@_deprecate_above
 @extension.command(
     help="Creates CA key, CA certificate, developer key and developer certificate used for extension signing"
 )
+@_deprecate_below
 @click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
 @click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
