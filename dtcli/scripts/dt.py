@@ -354,7 +354,7 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     """
     Generate a keycert for developer.
 
-    This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf the Certificate Authority.
+    This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf of the Certificate Authority.
 
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
     """
