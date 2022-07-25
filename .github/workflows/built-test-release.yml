@@ -1,12 +1,10 @@
 name: Build Test Release
 on:
-  # Pull request trigger works only for PRs into main branch
   pull_request:
     branches:
       - main
   push:
     # Push only works for tags in the main branch.
-    # Will be executed on push or successful merge into main.
     tags:
       - "v*"
   workflow_dispatch:
@@ -31,17 +29,11 @@ jobs:
             --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
             .
 
-      - name: Export docker image to file
+      - name: Deploy
         run: |
-          mkdir -p artifacts
-          docker save docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} > artifacts/image.tar
-        
-      - name: Upload docker image as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            artifacts/image.tar
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
   release-dev-docker-image:
     name: Release development docker image
@@ -92,51 +84,38 @@ jobs:
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
 
   run-tests:
-    name: Run tests
-    #
-    # Runs all tests using development image.
-    # - pytest:   tests
-    # - mypy:     typing
-    # - flake8:   linter
-    # - coverage: test coverage %
-    #
+    name: Verify code
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
-      - name: Download docker image from artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            artifacts
-
-      - name: Load docker image
+      - name: Acquire docker environment image
         run: |
-          docker load -i artifacts/image.tar
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
       - name: Run pytest tests
         run: |
           docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry run pytest
 
       - name: Run mypy tests
         run: |
           docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             bash -c '! poetry run mypy --strict dtcli | grep "Module has no attribute"'
 
       - name: Run flake8 lint checker
         run: |
           docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry run flake8 dtcli
             # TODO: change above to make
 
       - name: Run test coverage report
         run: |
           docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry run pytest --cov . --cov-report html || true
 
   build-package:
@@ -147,24 +126,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Download docker image from artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            artifacts
-
-      - name: Load docker image
+      - name: Acquire docker environment image
         run: |
-          docker load -i artifacts/image.tar
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
       - name: Build package
         run: |
           docker run \
-            -v "$(pwd):/app" \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry build
 
       - name: Cache built package artifacts
@@ -182,29 +152,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.9"
-          architecture: "x64"
-
-      - name: Install poetry
+      - name: Acquire docker environment image
         run: |
-          pip install poetry
-
-      - name: Install virtual environment
-        run: |
-          poetry install
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
       - name: Build binary distribution
         run: |
-          poetry run pyinstaller \
-            dtcli/scripts/dt.py \
-              --name dt \
-              --clean \
-              -p "$(poetry env info -p)/lib/python3.9/site-packages" \
-              --onefile
+          docker run \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            poetry run pyinstaller \
+              dtcli/scripts/dt.py \
+                --name dt \
+                --clean \
+                -p "$(poetry env info -p)/lib/python3.9/site-packages" \
+                --onefile
 
       - name: Cache built linux binary artifact
         uses: actions/upload-artifact@v2
