@@ -6,7 +6,9 @@ RUN pip install poetry
 # Project directory must be mounted in /app
 WORKDIR /app
 
+COPY poetry.lock pyproject.toml /app/
+RUN poetry config virtualenvs.create false && poetry install --no-root
+
 COPY . .
-RUN poetry install
 
 CMD [ "tail", "-f", "/dev/null" ]
