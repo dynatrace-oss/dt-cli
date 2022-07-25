@@ -356,7 +356,7 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
 
     This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf of the Certificate Authority.
 
-    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
     """
     subject_kv = [
         ("CN", name),
@@ -637,7 +637,7 @@ def sign(
     """
     Produce signed extension package.
 
-    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
 
