@@ -637,8 +637,6 @@ def sign(
     """
     Produce signed extension package.
 
-    This command requires key in the fused key-certificate format (so: one file containing both key and certificate). If for whatever reason you'd like to seperate those please reffer to the `build` command.
-
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form.
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
