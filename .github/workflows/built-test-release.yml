@@ -25,15 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Pull latest cached docker image
-        run: |
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest || true
-
       - name: Build docker image
         run: |
           docker build \
             --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
-            --cache-from docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest \
             .
 
       - name: Export docker image to file
