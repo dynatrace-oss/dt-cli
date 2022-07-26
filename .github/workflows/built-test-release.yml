@@ -48,30 +48,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Download docker image from artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            artifacts
-
-      - name: Load docker image
-        run: |
-          docker load -i artifacts/image.tar
-
-      - name: Authenticate in GitHub docker registry
+      - name: Acquire docker environment image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
       - name: Tag and push image with "latest" tag
         if: github.ref == 'refs/heads/main'
         run: |
           docker tag \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6}
+
+          docker tag \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
 
+          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6}
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest
 
       - name: Tag and push image with git tag
@@ -235,26 +228,15 @@ jobs:
 
   publish-to-pypi:
     name: Publish to PyPI
-    #
-    # Publishes built package to PyPI
-    #
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs:
       - build-package
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Download docker image from artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            artifacts
-
-      - name: Load docker image
+      - name: Acquire docker environment image
         run: |
-          docker load -i artifacts/image.tar
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
       - name: Download cached built package
         uses: actions/download-artifact@v2
@@ -267,6 +249,7 @@ jobs:
           PYPI_TOKEN: "${{ secrets.PYPI_TOKEN }}"
         run: |
           docker run \
-            -v "$(pwd):/app" \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            -v "$(pwd)/dist:/app/dist" \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry publish --username __token__ --password "$PYPI_TOKEN"
+
