@@ -34,6 +34,8 @@ from dtcli import server_api
 from dtcli import signing
 from dtcli.click_helpers import mk_click_callback, deprecated
 
+from .utility import app as utility_app
+
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
@@ -177,18 +179,6 @@ typer_extension = typer.Typer(add_completion=False)  # noqa: E305
 
 @main.group(aliases=["extensions_dev", "ext_dev"], hidden=True)
 def extension_dev():
-    pass
-
-
-# TODO: turn completion to True when implementing completion and somehow merge it with click
-utility = typer.Typer(hidden=True, add_completion=False)
-
-
-@utility.callback()
-def utility_callback():
-    """
-    Former internal scripts outsourced for the greater good.
-    """
     pass
 
 
@@ -818,20 +808,6 @@ def prepare_python(path_to_setup_py, **kwargs):
     )
 
 
-@utility.command()
-def acquire_secret(prefix: str = typer.Option(""),
-                   postfix: str = typer.Option("")):
-    """
-    The format is $Prefix$Secret$Postfix.
-
-    Given prefix="ble", postfix="zog" and user inputs "fuj"
-    the output will be "blefujzog".
-    """
-    secret = typer.prompt("Enter the value for the secret above")
-
-    click.echo(prefix + secret + postfix)
-
-
 # becasue of how typer works there has to be at least 2 commands for it to create a group
 # TODO: remove this after another command is migrated
 # https://typer.tiangolo.com/tutorial/using-click/#how-typer-works
@@ -847,4 +823,4 @@ for name, cmd in typer.main.get_command(typer_extension).commands.items():
 
     extension.add_command(cmd, name)
 
-main.add_command(typer.main.get_command(utility), "utility")
+main.add_command(typer.main.get_command(utility_app), "utility")

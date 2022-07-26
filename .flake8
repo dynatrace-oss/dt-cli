@@ -29,6 +29,9 @@ per-file-ignores =
     __init__.py: F401
     # D301 - click uses backslash characters in a clever way
     # B008 - this is fundamental to how Typer works
-    dtcli/scripts/dt.py: D301, B008
+    dtcli/scripts/*: D301, B008
+    # Flake8 parser is not additive
+    dtcli/scripts/__init__.py: F401
     # otherwise cyclic import
     dtcli/__init__.py: I100, F401
+
