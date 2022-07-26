@@ -148,17 +148,8 @@ def generate_cert(
         if dev_passphrase
         else serialization.NoEncryption()
     )
-    with open(dev_key_file_path, "wb") as fp:
-        fp.write(
-            private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=private_key_encryption,
-            )
-        )
 
     public_key = private_key.public_key()
-    print("Wrote developer private key: %s" % dev_key_file_path)
 
     builder = crypto_x509.CertificateBuilder()
     builder = builder.subject_name(subject_name)
@@ -198,9 +189,19 @@ def generate_cert(
         algorithm=hashes.SHA256(),
     )
 
-    with open(dev_cert_file_path, "b" + flags) as fp:
+    with open(dev_cert_file_path, "wb") as fp:
         fp.write(certificate.public_bytes(serialization.Encoding.PEM))
     print("Wrote developer certificate: %s" % dev_cert_file_path)
+
+    with open(dev_key_file_path, "b" + flags) as fp:
+        fp.write(
+            private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=private_key_encryption,
+            )
+        )
+    print("Wrote developer private key: %s" % dev_key_file_path)
 
     os.chmod(dev_key_file_path, constants.REQUIRED_PRIVATE_KEY_PERMISSIONS)
 
