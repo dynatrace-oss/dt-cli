@@ -83,6 +83,17 @@ jobs:
 
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_REF#refs/tags/}
 
+  check-line-endings:
+    name: Check CRLF line endings
+    runs-on: ubuntu-latest
+    needs: build-dev-docker-image
+    steps:
+      - name: Checkout repository contents
+        uses: actions/checkout@v1
+
+      - name: Use action to check for CRLF endings
+        uses: erclu/check-crlf@v1
+
   run-tests:
     name: Verify code
     runs-on: ubuntu-latest
