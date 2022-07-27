@@ -156,9 +156,6 @@ jobs:
 
   build-linux-binary:
     name: Build linux binary
-    #
-    # Builds linux binary using pyinstaller.
-    #
     runs-on: ubuntu-latest
     needs: build-dev-docker-image
     steps:
@@ -174,7 +171,7 @@ jobs:
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry run pyinstaller \
-              dtcli/scripts/dt.py \
+                dtcli/__main__.py \
                 --name dt \
                 --clean \
                 -p "$(poetry env info -p)/lib/python3.9/site-packages" \
