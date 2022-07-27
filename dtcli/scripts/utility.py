@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 
 # TODO: turn completion to True when implementing completion and somehow merge it with click
@@ -13,8 +15,16 @@ def utility_callback():
 
 
 @app.command()
-def acquire_secret(prefix: str = typer.Option(""),
-                   postfix: str = typer.Option("")):
+def acquire_secret(
+    destination: Path = typer.Option(
+        ...,
+        "--output", "-o",
+        writable=True,
+        help="Location where the secret will be written",
+    ),
+    prefix: str = typer.Option(""),
+    postfix: str = typer.Option("")
+):
     """
     The format is $Prefix$Secret$Postfix.
 
@@ -23,4 +33,7 @@ def acquire_secret(prefix: str = typer.Option(""),
     """
     secret = typer.prompt("Enter the value for the secret above")
 
-    print(prefix + secret + postfix)
+    payload = "".join([prefix, secret, postfix])
+
+    with open(destination, "w") as f:
+        f.write(payload)
