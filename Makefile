@@ -18,6 +18,14 @@ type-check:
 test:
 	poetry run pytest -x
 
+ble:
+	poetry run pyinstaller \
+		dtcli/__main__.py \
+		--name dt \
+		--clean \
+		-p "$(poetry env info -p)/lib/python3.9/site-packages" \
+		--onefile
+
 bump-version: ## bumps version (sepecified into VERSION)
 	poetry run bump2version --no-tag --no-commit --new-version $(VERSION) whatever
 
