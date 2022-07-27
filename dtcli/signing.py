@@ -229,6 +229,12 @@ def sign_file(file_path, signature_file_path, certificate_file_path, private_key
     signed_data["encap_content_info"] = util.OrderedDict([("content_type", "data"), ("content", None)])
     signed_data["digest_algorithms"] = [util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])]
 
+    signer_info = cms.SignerInfo()
+    signer_info["version"] = 1
+    signer_info["digest_algorithm"] = util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])
+    signer_info["signature_algorithm"] = util.OrderedDict([("algorithm", "rsassa_pkcs1v15"), ("parameters", core.Null)])
+    signer_info["signature"] = signature
+
     with open(certificate_file_path, "rb") as fp:
         der_bytes = fp.read()
         if pem.detect(der_bytes):
@@ -243,21 +249,30 @@ def sign_file(file_path, signature_file_path, certificate_file_path, private_key
         cert,
     ]
 
-    signer_info = cms.SignerInfo()
-    signer_info["version"] = 1
-    signer_info["digest_algorithm"] = util.OrderedDict([("algorithm", "sha256"), ("parameters", None)])
-    signer_info["signature_algorithm"] = util.OrderedDict([("algorithm", "rsassa_pkcs1v15"), ("parameters", core.Null)])
-    signer_info["signature"] = signature
-    signer_info["sid"] = cms.SignerIdentifier(
-        {
-            "issuer_and_serial_number": util.OrderedDict(
-                [
-                    ("issuer", cert.issuer),
-                    ("serial_number", cert.serial_number),
-                ]
-            )
-        }
-    )
+    try:
+        signer_info["sid"] = cms.SignerIdentifier(
+            {
+                "issuer_and_serial_number": util.OrderedDict(
+                    [
+                        ("issuer", cert.issuer),
+                        ("serial_number", cert.serial_number),
+                    ]
+                )
+            }
+        )
+    except ValueError as e:
+        # I don't love it, but not sure if there is another way...
+        if "Error parsing asn1crypto.x509.TbsCertificate - method should have been constructed, but primitive was found" in e.args[0]:
+            # please delete TODOs if https://github.com/dynatrace-oss/dt-cli/issues/99 is closed
+            # TODO: add failing test
+            # TODO: handle it - essentially reorder key and cert so that cert is at the top
+            # TODO: warn about the situation with DI warning
+
+            # TODO: don't print nor exit in the core, instead propagate the error to the UI and handle
+            print("Error: Malformed fused certkey, certificate should be first; please regenerate the certificate or reorder manually")
+            exit(1)
+        else:
+            raise
 
     signed_data["signer_infos"] = [
         signer_info,
