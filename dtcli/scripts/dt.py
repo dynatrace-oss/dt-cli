@@ -33,8 +33,8 @@ from dtcli import dev
 from dtcli import server_api
 from dtcli import signing
 from dtcli.click_helpers import mk_click_callback, deprecated
+from dtcli.scripts.utility import app as utility_app
 
-from .utility import app as utility_app
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
