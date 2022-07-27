@@ -843,8 +843,9 @@ def please_remove_this_later():
 
 
 for name, cmd in typer.main.get_command(typer_extension).commands.items():
+    print(name)
     # TODO: remove this after another command is migrated
-    if name == "please_remove_this_later":
+    if name == "please-remove-this-later":
         continue
 
     extension.add_command(cmd, name)
