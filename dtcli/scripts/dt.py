@@ -20,7 +20,6 @@ import platform
 import re
 import sys
 from pathlib import Path
-# from typing import Callable, Any, TypeVar
 
 import click
 import typer  # noqa: I201
@@ -552,8 +551,16 @@ def gencerts(**kwargs):
 def build(**kwargs):
     extension_dir_path = kwargs["extension_directory"]
     utils.require_dir_exists(extension_dir_path)
-
     target_dir_path = kwargs["target_directory"]
+
+    if extension_dir_path == target_dir_path:
+        click.echo("Warning: extension_directory is the same as target_directory\n"
+                   f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
+
+    if target_dir_path.is_relative_to(extension_dir_path):
+        click.echo("Warning: target directory contains extension directory \n"
+                   f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
+
     if os.path.exists(target_dir_path):
         utils.require_dir_exists(target_dir_path)
         if not os.path.isdir(target_dir_path):
@@ -598,7 +605,7 @@ def build(**kwargs):
     "-o",
     "--output",
     "destination",
-    type=click.Path(writable=True),
+    type=click.Path(writable=True, dir_okay=False),
     default=str(const.DEFAULT_BUILD_OUTPUT),
     callback=mk_click_callback(Path),
     show_default=True,
@@ -618,6 +625,10 @@ def assemble(source, destination, force):
     """
     if destination.exists() and not force:
         raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+
+    if destination.is_relative_to(source):
+        click.echo("Warning: source directory contains destination directory\n"
+                   f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
 
     building.build(extension_dir=source, extension_zip=destination)
 
@@ -848,5 +859,6 @@ for name, cmd in typer.main.get_command(typer_extension).commands.items():
         continue
 
     extension.add_command(cmd, name)
+
 
 main.add_command(typer.main.get_command(utility_app), "utility")

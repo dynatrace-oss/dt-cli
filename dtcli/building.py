@@ -44,13 +44,18 @@ def _zip_extension(extension_dir_path, extension_zip_path):
     print("Building %s from %s" % (extension_zip_path, extension_dir_path))
 
     with zipfile.ZipFile(extension_zip_path, "w") as zf:
-
         for file_path in glob.glob(os.path.join(extension_dir_path, "**"), recursive=True):
+            # This is covered by glob
             if os.path.isdir(file_path):
                 continue
+
             rel_path = os.path.relpath(file_path, extension_dir_path)
-            print("Adding file: %s as %s" % (file_path, rel_path))
+
+            if rel_path == str(extension_zip_path):
+                continue
+
             zf.write(file_path, arcname=rel_path)
+            print("Adding file: %s as %s" % (file_path, rel_path))
 
 
 def _package(
