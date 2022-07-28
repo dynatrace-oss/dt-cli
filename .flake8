@@ -15,9 +15,7 @@ ignore=
     # practicality beats purity
     I101,
     # for now
-    # TODO: do it fast
     # TODO: do it!
-    E501,
     D103,
     D101,
     D102, D107, D105,

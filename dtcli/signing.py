@@ -206,10 +206,12 @@ def generate_cert(
     os.chmod(dev_key_file_path, constants.REQUIRED_PRIVATE_KEY_PERMISSIONS)
 
 
-def sign_file(file_path, signature_file_path, certificate_file_path, private_key_file_path, dev_passphrase=None, _no_side_effect=False):
+def sign_file(file_path, signature_file_path, certificate_file_path,
+              private_key_file_path, dev_passphrase=None, _no_side_effect=False):
     if not _no_side_effect:
         print(
-            "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path, private_key_file_path)
+            "Signing %s using %s certificate and %s private key" % (file_path, certificate_file_path,
+                                                                    private_key_file_path)
         )
 
     with open(private_key_file_path, "rb") as fp:
@@ -262,14 +264,16 @@ def sign_file(file_path, signature_file_path, certificate_file_path, private_key
         )
     except ValueError as e:
         # I don't love it, but not sure if there is another way...
-        if "Error parsing asn1crypto.x509.TbsCertificate - method should have been constructed, but primitive was found" in e.args[0]:
+        if "Error parsing asn1crypto.x509.TbsCertificate - method should have been constructed," \
+           " but primitive was found" in e.args[0]:
             # please delete TODOs if https://github.com/dynatrace-oss/dt-cli/issues/99 is closed
             # TODO: add failing test
             # TODO: handle it - essentially reorder key and cert so that cert is at the top
             # TODO: warn about the situation with DI warning
 
             # TODO: don't print nor exit in the core, instead propagate the error to the UI and handle
-            print("Error: Malformed fused certkey, certificate should be first; please regenerate the certificate or reorder manually")
+            print("Error: Malformed fused certkey, certificate should be first;"
+                  " please regenerate the certificate or reorder manually")
             exit(1)
         else:
             raise

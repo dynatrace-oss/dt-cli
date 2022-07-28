@@ -96,7 +96,8 @@ def wipe_extension_version(client, state, extension_fqdn: str, version: str):
         there_are_other_mcs = False
 
         if there_are_other_mcs:
-            # this will be a pain to sensibly parallelize, so... for now don't run this thing on the same fqdn simultaneously
+            # this will be a pain to sensibly parallelize,
+            # so... for now don't run this thing on the same fqdn simultaneously
             target_version = state.versions(extension_fqdn, exclude={version})[-1]
             client.point_environment_configuration_to(extension_fqdn, target_version)
         else:

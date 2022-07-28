@@ -24,12 +24,14 @@ class DynatraceAPIClient:
         return alert
 
     def acquire_monitoring_configurations(self, fqdn: str):
-        r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations", headers=self.headers)
+        r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations",
+                              headers=self.headers)
         r.raise_for_status()
         return r.json()["items"]
 
     def acquire_environment_configuration(self, fqdn: str):
-        r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration", headers=self.headers)
+        r = self.requests.get(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration",
+                              headers=self.headers)
 
         if r.status_code == 404:
             return
@@ -49,7 +51,10 @@ class DynatraceAPIClient:
         return r.json()["extensions"]
 
     def delete_monitoring_configuration(self, fqdn: str, configuration_id: str):
-        r = self.requests.delete(self.url_base + f"/api/v2/extensions/{fqdn}/monitoringConfigurations/{configuration_id}", headers=self.headers)
+        r = self.requests.delete(
+            f"{self.url_base}/api/v2/extensions/{fqdn}/monitoringConfigurations/{configuration_id}",
+            headers=self.headers
+        )
         try:
             r.raise_for_status()
         except requests.HTTPError:
@@ -63,7 +68,8 @@ class DynatraceAPIClient:
             raise
 
     def delete_environment_configuration(self, fqdn: str):
-        r = self.requests.delete(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration", headers=self.headers)
+        r = self.requests.delete(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration",
+                                 headers=self.headers)
         err = r.json()
         try:
             r.raise_for_status()
@@ -124,7 +130,8 @@ class DynatraceAPIClient:
             totalSizeArchive = totalSizeArchive + len(data)
             ratio = len(data) / zinfo.compress_size
             if ratio > THRESHOLD_RATIO:
-                raise Exception("ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack")
+                raise Exception("ratio between compressed and uncompressed data is highly suspicious,"
+                                " looks like a Zip Bomb Attack")
 
             if totalSizeArchive > THRESHOLD_SIZE:
                 raise Exception("the uncompressed data size is too much for the application resource capacity")
@@ -138,7 +145,8 @@ class DynatraceAPIClient:
         return version
 
     def point_environment_configuration_to(self, fqdn: str, version: str):
-        r = self.requests.put(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration", headers=self.headers, json={"version": version})
+        r = self.requests.put(self.url_base + f"/api/v2/extensions/{fqdn}/environmentConfiguration",
+                              headers=self.headers, json={"version": version})
         err = r.json()
         try:
             r.raise_for_status()
