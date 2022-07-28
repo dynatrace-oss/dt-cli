@@ -1,0 +1,3 @@
+*.md
+*.nix
+pyproject.toml.mod
