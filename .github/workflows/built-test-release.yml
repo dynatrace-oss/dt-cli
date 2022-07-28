@@ -17,10 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      #- name: Acquire cache
-        #run: |
-          #echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          #docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
+      - name: Acquire cache
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
 
       - name: Ensure cachability
         run: |
@@ -38,7 +38,6 @@ jobs:
 
       - name: Deploy
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
 
   deploy-image-for-cache:
