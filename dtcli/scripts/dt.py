@@ -345,7 +345,7 @@ def gendevcert(**kwargs):
     type=click.Path(writable=True),
     callback=mk_click_callback(Path),
     required=True,
-    help="Location where the keycert will be written",
+    help="Location where the certkey will be written",
 )
 @click.option(
     "--ca-crt",
@@ -382,7 +382,7 @@ def gendevcert(**kwargs):
 )
 def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_valid):
     """
-    Generate a keycert for developer.
+    Generate a certkey for developer.
 
     This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf of the Certificate Authority.
 
@@ -664,7 +664,7 @@ def sign(
         writable=True,
         help="Location where signed extension package will be written",
     ),
-    fused_keycert: Path = typer.Option(
+    certkey: Path = typer.Option(
         const.DEFAULT_KEYCERT_PATH,
         "--key",
         exists=True, dir_okay=False,
@@ -681,10 +681,10 @@ def sign(
 
     Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
     """
-    # TODO: get rid of the experimental warrning once all the utiliteis support fused keycert
+    # TODO: get rid of the experimental warrning once all the utiliteis support fused certkey
 
     def is_key_permissions_ok():
-        permissions = utils.acquire_file_dac(fused_keycert)
+        permissions = utils.acquire_file_dac(certkey)
 
         # Windows doesn't distinguish between user, group and other in that way
         if platform.system() == "Windows":
@@ -694,7 +694,7 @@ def sign(
             return permissions == const.REQUIRED_PRIVATE_KEY_PERMISSIONS
 
     if not is_key_permissions_ok() and not force:
-        raise click.BadParameter(f"key {fused_keycert} has too lax permissions - we recommend {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {fused_keycert}` and try again or try again with --force to proceed irregardless", param_hint="--key")
+        raise click.BadParameter(f"key {certkey} has too lax permissions - we recommend {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {certkey}` and try again or try again with --force to proceed irregardless", param_hint="--key")
 
     if destination.exists():
         if force:
@@ -705,7 +705,7 @@ def sign(
     # TODO: see generate_developer_pem
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
 
-    building.sign(payload, destination, fused_keycert)
+    building.sign(payload, destination, certkey)
 
 
 @extension.command(

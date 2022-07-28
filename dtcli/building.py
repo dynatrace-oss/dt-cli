@@ -94,10 +94,10 @@ def build(extension_dir: Path, extension_zip: Path):
     _zip_extension(extension_dir, extension_zip)
 
 
-def sign(payload: Path, destination: Path, fused_keycert: Path):
+def sign(payload: Path, destination: Path, certkey: Path):
     # since it's a constant size with regards to the payload it can be safely done in memory
-    pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=fused_keycert,
-                                  private_key_file_path=fused_keycert, dev_passphrase=None, _no_side_effect=True)
+    pem_bytes = signing.sign_file(payload, "doesn't matter", certificate_file_path=certkey,
+                                  private_key_file_path=certkey, dev_passphrase=None, _no_side_effect=True)
 
     with zipfile.ZipFile(destination, "w") as zf:
         zf.comment = bytes(_generate_build_comment(), "utf-8")
