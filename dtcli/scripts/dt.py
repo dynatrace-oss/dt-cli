@@ -198,18 +198,6 @@ def extension_dev():
     pass
 
 
-# TODO: turn completion to True when implementing completion and somehow merge it with click
-utility = typer.Typer(hidden=True, add_completion=False)
-
-
-@utility.callback()
-def utility_callback():
-    """
-    Former internal scripts outsourced for the greater good.
-    """
-    pass
-
-
 @extension.command(
     help="Creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
@@ -846,20 +834,6 @@ def prepare_python(path_to_setup_py, **kwargs):
     return dev.pack_python_extension(
         setup_path=path_to_setup_py, target_path=extension_directory, additional_path=additional_libraries_dir
     )
-
-
-@utility.command()
-def acquire_secret(prefix: str = typer.Option(""),
-                   postfix: str = typer.Option("")):
-    """
-    The format is $Prefix$Secret$Postfix.
-
-    Given prefix="ble", postfix="zog" and user inputs "fuj"
-    the output will be "blefujzog".
-    """
-    secret = typer.prompt("Enter the value for the secret above")
-
-    click.echo(prefix + secret + postfix)
 
 
 # becasue of how typer works there has to be at least 2 commands for it to create a group
