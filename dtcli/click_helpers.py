@@ -54,3 +54,10 @@ def deprecated(alternative: Optional[str], alternative_help: Optional[str] = Non
         alt_text = ""
     warning = f"{click.style('This function is deprecated', fg='red')}.{alt_text}"
     return (_deprecated_above(warning), _deprecated_below(lambda: click.echo(warning)))
+
+
+# TODO: type it correctly
+def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
+    def wrapper(f):
+        return a(b(f))
+    return wrapper
