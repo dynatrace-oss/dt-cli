@@ -160,18 +160,10 @@ def tenant_error_handler(func):
 
 tenant_url_click = click.option(  # noqa:E305
     "--tenant-url",
-    callback=sanitize_url,
+    callback=mk_click_callback(parse_tenant_url),
     prompt=True,
     help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
 )
-
-
-# TODO: type it correctly
-def compose_click_decorators_2(a, b) -> "decorator":  # noqa: F821
-    def wrapper(f):
-        return a(b(f))
-    return wrapper
-
 
 tenant_url = compose_click_decorators_2(tenant_url_click, tenant_error_handler)
 requires_tenant = compose_click_decorators_2(api_token, tenant_url)
@@ -196,17 +188,14 @@ def extension():
         gencerts -> build -> upload
     """
     pass
-
 # TODO: turn completion to True when implementing completion and somehow merge it with click
 # see: https://github.com/tiangolo/typer/issues/141
 typer_extension = typer.Typer(add_completion=False)  # noqa: E305
 
 
-
 @main.group(aliases=["extensions_dev", "ext_dev"], hidden=True)
 def extension_dev():
     pass
-
 
 
 # TODO: turn completion to True when implementing completion and somehow merge it with click
@@ -219,7 +208,6 @@ def utility_callback():
     Former internal scripts outsourced for the greater good.
     """
     pass
-
 
 
 @extension.command(
