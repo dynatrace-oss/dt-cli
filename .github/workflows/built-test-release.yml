@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      #- name: Acquire cache
+        #run: |
+          #echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          #docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
+
       - name: Ensure cachability
         run: |
           cp pyproject.toml pyproject.toml.mod
@@ -28,7 +33,7 @@ jobs:
         run: |
           docker build \
             --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            --cache-from docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:latest \
+            --cache-from docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest \
             .
 
       - name: Deploy
