@@ -43,7 +43,7 @@ def _zip_extension(extension_dir_path, extension_zip_path):
     utils.check_file_exists(extension_zip_path)
     print("Building %s from %s" % (extension_zip_path, extension_dir_path))
 
-    with zipfile.ZipFile(extension_zip_path, "w") as zf:
+    with zipfile.ZipFile(extension_zip_path, "w", compression=zipfile.ZIP_LZMA, compresslevel=9) as zf:
         for file_path in glob.glob(os.path.join(extension_dir_path, "**"), recursive=True):
             # This is covered by glob
             if os.path.isdir(file_path):
