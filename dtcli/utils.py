@@ -32,12 +32,12 @@ class KeyGenerationError(Exception):
 def require_extension_name_valid(extension_name):
     extension_name_regex = re.compile("^custom:(?!\\.)(?!.*\\.\\.)(?!.*\\.$)[a-z0-9-_\\.]+$")
     if not extension_name_regex.match(extension_name):
+        print("""Name of your extension, (an extension not developed by Dynatrace) must start with "custom:" and
+comply with the metric ingestion protocol requirements for dimensions.
+Read more at:
+https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/extension-yaml/#start-extension-yaml-file"""
+              )
         print("%s doesn't satisfy extension naming format, aborting!" % extension_name)
-        print(
-            "Name of your extension, (an extension not developed by Dynatrace) must start with custom: "
-            "and comply with the metric ingestion protocol requirements for dimensions.\n Read more at: "
-            "https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/extension-yaml/#start-extension-yaml-file"
-        )
         raise ExtensionBuildError()
 
 

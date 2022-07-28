@@ -80,9 +80,8 @@ def _genca(ca_cert_path, ca_key_path, force, subject, days_valid, ca_passphrase)
         )
         return
 
-    if utils.check_file_exists(ca_cert_path, utils.KeyGenerationError, warn_overwrite=False) and utils.check_file_exists(
-        ca_key_path, utils.KeyGenerationError, warn_overwrite=False
-    ):
+    if utils.check_file_exists(ca_cert_path, utils.KeyGenerationError, warn_overwrite=False) \
+            and utils.check_file_exists(ca_key_path, utils.KeyGenerationError, warn_overwrite=False):
         raise utils.KeyGenerationError(
             "CA certificate NOT generated! CA key and certificate already exist. Use --force option to generate anyway."
         )
@@ -142,7 +141,9 @@ def parse_tenant_url(value: str) -> str:
 
 # Walk around for token read from env if no file is provided, by default value is "-" and gets token from default file
 # location if file doesn't exist takes token from virtual variable, else takes token from file passed as argument
-api_token = click.argument("api-token-path", nargs=1, type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True, allow_dash=True),
+api_token = click.argument("api-token-path", nargs=1,
+                           type=click.Path(exists=True, dir_okay=False, readable=True,
+                                           resolve_path=True, allow_dash=True),
                            default="-", callback=token_load
                            )
 
@@ -173,7 +174,7 @@ requires_tenant = compose_click_decorators_2(api_token, tenant_url)
 @click.version_option(version=__version__)
 def main():
     """
-    Dynatrace CLI is a command line utility that assists in signing, building and uploading extensions for Dynatrace Extensions 2.0 framework.
+    Dynatrace CLI is a command line utility for Dynatrace Extensions 2.0 framework.
     """
     pass
 
@@ -372,9 +373,12 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     """
     Generate a certkey for developer.
 
-    This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused key-certificate that allows to sign extensions on behalf of the Certificate Authority.
+    This should be signed by CA and belong to one entity only (like an employee). The resulting file is a fused
+    key-certificate that allows to sign extensions on behalf of the Certificate Authority.
 
-    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it
+    wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner
+    please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
     """
     subject_kv = [
         ("CN", name),
@@ -391,7 +395,8 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     # TODO: test_ext logic after clayring that
 
     # TODO: see sign
-    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
+    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required
+    #  and handled securely (like... cleared from memory), also: get rid of the comment in help
     # TODO: both setting the dev passphrase and reading the CA key passphrase
 
     signing.generate_cert(
@@ -406,7 +411,10 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     )
 
 
-_deprecate_above, _deprecate_below = deprecated("dt ext genca; dt ext generate-developer-pem", "See: https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/sign-extension#cert for additional details")
+_deprecate_above, _deprecate_below = deprecated(
+    "dt ext genca; dt ext generate-developer-pem",
+    "See: https://www.dynatrace.com/support/help/extend-dynatrace/extensions20/sign-extension#cert"
+    " for additional details")
 
 
 @_deprecate_above
@@ -502,7 +510,8 @@ def gencerts(**kwargs):
 
 
 @extension.command(
-    help=f"Build and sign extension package from the given extension directory (default: {const.DEFAULT_EXTENSION_DIR}) that contains extension.yaml and additional asset directories"
+    help=f"Build and sign extension package from the given extension directory (default: {const.DEFAULT_EXTENSION_DIR})"
+         f" that contains extension.yaml and additional asset directories"
 )
 @click.option(
     "--extension-directory",
@@ -629,7 +638,8 @@ def assemble(source, destination, force):
     Build extension package.
     """
     if destination.exists() and not force:
-        raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+        raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed "
+                                 f"irregardless", param_hint="--source")
 
     if destination.is_relative_to(source):
         click.echo("Warning: source directory contains destination directory\n"
@@ -667,7 +677,9 @@ def sign(
     """
     Produce signed extension package.
 
-    Certificates with passphrase are currently not supported as if you required that kind of level of security it wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
+    Certificates with passphrase are currently not supported as if you required that kind of level of security it
+    wouldn't be wise to use this command in it's current form. If you'd like this feature to be implemented sooner
+    please visit https://github.com/dynatrace-oss/dt-cli/issues/81 and upvote.
     """
     # TODO: get rid of the experimental warrning once all the utiliteis support fused certkey
 
@@ -682,16 +694,21 @@ def sign(
             return permissions == const.REQUIRED_PRIVATE_KEY_PERMISSIONS
 
     if not is_key_permissions_ok() and not force:
-        raise click.BadParameter(f"key {certkey} has too lax permissions - we recommend {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via `chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {certkey}` and try again or try again with --force to proceed irregardless", param_hint="--key")
+        raise click.BadParameter(f"key {certkey} has too lax permissions - we recommend "
+                                 f"{oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via "
+                                 f"`chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {certkey}` "
+                                 f"and try again or try again with --force to proceed irregardless", param_hint="--key")
 
     if destination.exists():
         if force:
             click.echo(f"Warning: overwritting {destination}", err=True)
         else:
-            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed irregardless", param_hint="--source")
+            raise click.BadParameter(f"destination {destination} already exists, please try again with --force to "
+                                     f"proceed irregardless", param_hint="--source")
 
     # TODO: see generate_developer_pem
-    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
+    # TODO: implement sensible passphrase handling - it should be a prompt only when it's required
+    #  and handled securely (like... cleared from memory), also: get rid of the comment in help
 
     building.sign(payload, destination, certkey)
 
