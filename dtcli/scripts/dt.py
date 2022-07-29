@@ -400,7 +400,7 @@ def generate_developer_pem(destination, ca_crt, ca_key, name, company, days_vali
     subject = "".join(f"/{t[0]}={t[1]}" for t in subject_kv)
     # TODO: maybe I can just unparse? What about order?
     subject = validate_parse_subject(None, None, subject)
-    # TODO: test logic after clayring that
+    # TODO: test_ext logic after clayring that
 
     # TODO: see sign
     # TODO: implement sensible passphrase handling - it should be a prompt only when it's required and handled securely (like... cleared from memory), also: get rid of the comment in help
@@ -573,8 +573,8 @@ def build(**kwargs):
     if extension_dir_path == target_dir_path:
         click.echo("Warning: extension_directory is the same as target_directory\n"
                    f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
-
-    if target_dir_path.is_relative_to(extension_dir_path):
+    # TODO: fix properly hotfix with Path
+    elif Path(target_dir_path).is_relative_to(extension_dir_path):
         click.echo("Warning: target directory contains extension directory \n"
                    f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
 
