@@ -11,29 +11,49 @@ on:
 
 jobs:
   build-dev-docker-image:
+    # This docker image is essential for all other steps
     name: Build development docker image
-    #
-    # Builds development docker image and tags it with Commit SHA.
-    # Pushes the image to GitHub image registry.
-    #
-    # This docker image is essential for all other steps. It is used
-    # for testing, building, publishing, etc.
-    #
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
+      - name: Acquire cache
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
+
+      - name: Ensure cachability
+        run: |
+          cp pyproject.toml pyproject.toml.mod
+          # otherwise the first layer changes and invalidates the cache
+          # even though the dependencies have not changed at all
+          sed -i 's/^version = ".*"$/version = "0.0.1"/' pyproject.toml.mod 
+
       - name: Build docker image
         run: |
           docker build \
-            --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} \
+            --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            --cache-from docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest \
             .
 
       - name: Deploy
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-dev:${GITHUB_SHA:0:6} docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
           docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+
+  deploy-image-for-cache:
+    name: Deploy :latest env container
+    needs: build-dev-docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acquire docker environment image
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
+          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+
+      - name: Deploy image with latest tag
+        run: |
+          docker tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
+          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
 
   release-dev-docker-image:
     name: Release development docker image

@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y binutils
 # Project directory must be mounted in /app
 WORKDIR /app
 
-COPY poetry.lock pyproject.toml /app/
+COPY poetry.lock /app/
+COPY pyproject.toml.mod /app/pyproject.toml
 RUN poetry config virtualenvs.create false && poetry install --no-root
 
 COPY . .
