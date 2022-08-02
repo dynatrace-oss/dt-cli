@@ -34,6 +34,7 @@ from dtcli import server_api
 from dtcli import signing
 from dtcli.click_helpers import deprecated, compose_click_decorators_2, mk_click_callback
 from dtcli.scripts.utility import app as utility_app
+from dtcli.shim import _Path_is_relative
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -570,8 +571,8 @@ def build(**kwargs):
     if extension_dir_path == target_dir_path:
         click.echo("Warning: extension_directory is the same as target_directory\n"
                    f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
-    # TODO: fix properly hotfix with Path
-    elif Path(target_dir_path).is_relative_to(extension_dir_path):
+    # TODO: remove the inner Path call by parsing the argument earlier
+    elif _Path_is_relative(Path(target_dir_path), extension_dir_path):
         click.echo("Warning: target directory contains extension directory \n"
                    f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
 
@@ -641,7 +642,7 @@ def assemble(source, destination, force):
         raise click.BadParameter(f"destination {destination} already exists, please try again with --force to proceed "
                                  f"irregardless", param_hint="--source")
 
-    if destination.is_relative_to(source):
+    if _Path_is_relative(destination, source):
         click.echo("Warning: source directory contains destination directory\n"
                    f"This {click.style('might', bold=True)} cause to include secrets or excessive files", err=True)
 
