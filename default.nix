@@ -10,6 +10,7 @@ let
   myPython = pythonCore.withPackages pythonPkgs;
   pythonPkgs = python-packages: with python-packages; [
       poetry
+      python-lsp-server
     ];
   env = pkgs.buildEnv {
     name = "dtcli-dev-env";
@@ -20,6 +21,7 @@ let
       gnumake
       myPython
       entr
+      rnix-lsp
     ];
   };
 in
