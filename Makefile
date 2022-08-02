@@ -26,6 +26,8 @@ ble:
 		-p "$(poetry env info -p)/lib/python3.9/site-packages" \
 		--onefile
 
+ci: lint type-check test
+
 bump-version: ## bumps version (sepecified into VERSION)
 	poetry run bump2version --no-tag --no-commit --new-version $(VERSION) whatever
 
