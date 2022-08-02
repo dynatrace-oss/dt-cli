@@ -8,7 +8,7 @@ def _Path_is_relative(p: Path, other: Path) -> bool:
     # source: https://github.com/python/cpython/blob/3.10/Lib/pathlib.py#L824
     except AttributeError:  # in Python 3.8
         try:
-            p.relative_to(*other)
+            p.relative_to(other)
         except ValueError:
             return False
         else:
