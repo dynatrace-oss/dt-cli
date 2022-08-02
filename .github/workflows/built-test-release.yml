@@ -197,6 +197,10 @@ jobs:
                 -p "$(poetry env info -p)/lib/python3.9/site-packages" \
                 --onefile
 
+      - name: Actually run it
+        run: |
+          ./dist/dt
+
       - name: Cache built linux binary artifact
         uses: actions/upload-artifact@v2
         with:
