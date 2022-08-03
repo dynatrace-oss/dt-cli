@@ -10,10 +10,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  # This docker image is essential for all other steps
   build-dev-docker-image:
-    # This docker image is essential for all other steps
     name: Build development docker image
     runs-on: ubuntu-latest
+    # should be <1 in most cases, but full no-cache rebuilt
+    # can take a little bit more than 2
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v2
 
@@ -44,6 +47,7 @@ jobs:
     name: Deploy :latest env container
     needs: build-dev-docker-image
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
       - name: Acquire docker environment image
         run: |
@@ -103,6 +107,7 @@ jobs:
   check-line-endings:
     name: Check CRLF line endings
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     needs: build-dev-docker-image
     steps:
       - name: Checkout repository contents
@@ -114,6 +119,7 @@ jobs:
   run-tests:
     name: Verify code
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     needs: build-dev-docker-image
     steps:
       - name: Acquire docker environment image
@@ -152,6 +158,7 @@ jobs:
     # Builds python package using poetry.
     #
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     needs: build-dev-docker-image
     steps:
       - name: Acquire docker environment image
@@ -177,6 +184,7 @@ jobs:
   build-linux-binary:
     name: Build linux binary
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     needs: build-dev-docker-image
     steps:
       - name: Acquire docker environment image
