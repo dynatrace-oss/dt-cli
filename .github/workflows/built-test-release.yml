@@ -228,6 +228,7 @@ jobs:
     needs:
       - build-package
       - build-linux-binary
+      - run-tests
     steps:
       - uses: actions/checkout@v2
 
@@ -265,6 +266,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-package
+      - run-tests
     steps:
       - name: Acquire docker environment image
         run: |
