@@ -510,10 +510,15 @@ def gencerts(**kwargs):
     )
 
 
+_deprecate_above, _deprecate_below = deprecated("dt ext assemble or dt ext sign")
+
+
+@_deprecate_above
 @extension.command(
     help=f"Build and sign extension package from the given extension directory (default: {const.DEFAULT_EXTENSION_DIR})"
          f" that contains extension.yaml and additional asset directories"
 )
+@_deprecate_below
 @click.option(
     "--extension-directory",
     default=const.DEFAULT_EXTENSION_DIR,
