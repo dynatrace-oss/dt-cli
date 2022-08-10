@@ -46,7 +46,7 @@ Alternatively, you can use the Docker image to replicate the environment without
   ```
 
   It might be beneficial to have the virtual environment placed right inside the project directory for
-  an easier gonviguration of the syntax highlighting in the IDE. For these purposes, create the virtual
+  an easier configuration of the syntax highlighting in the IDE. For these purposes, create the virtual
   environment named `.venv` in the root directory of the project. Poetry will automatically pick it up
   and use it as a destination directory for its operations with the venv as described in
   [the docs](https://python-poetry.org/docs/configuration/#virtualenvsin-project).

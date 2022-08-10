@@ -1,12 +1,15 @@
-setup:  ## prepare the environment
-	poetry install
+setup: .venv ## prepare the environment
 
-lint:
+lint: setup
 	poetry run flake8 dtcli
 	# TODO: reenable those pesky warnings in .flake8
 	# TODO: bump CI for entire source code
 
-type-check:
+.venv: poetry.lock
+	python -m venv .venv
+	poetry install
+
+type-check: setup
 	#poetry run mypy --strict dtcli/scripts/dt.py
 	# TODO: enable all errors
 	! poetry run mypy --strict dtcli | grep 'Module has no attribute'
@@ -15,10 +18,10 @@ type-check:
 	# TODO: bump CI
 	# TODO: fix colors!
 
-test:
+test: setup
 	poetry run pytest -x
 
-ble:
+ble: setup
 	poetry run pyinstaller \
 		dtcli/__main__.py \
 		--name dt \
@@ -28,7 +31,7 @@ ble:
 
 ci: lint type-check test
 
-bump-version: ## bumps version (sepecified into VERSION)
+bump-version: setup ## bumps version (sepecified into VERSION)
 	poetry run bump2version --no-tag --no-commit --new-version $(VERSION) whatever
 
 .PHONY: help init
