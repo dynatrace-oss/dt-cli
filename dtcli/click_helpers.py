@@ -51,7 +51,7 @@ def deprecated(alternative: Optional[str], alternative_help: Optional[str] = Non
     This has to happen this way.
 
     Click decorator registers the function automatically, so I'd need to track where it's registered or something [so
-    the acutal function that's run could be decorated], instead I've opted for spawining 2 decorators and just doing
+    the actual function that's run could be decorated], instead I've opted for spawning 2 decorators and just doing
     it the hacky way.
     """
     if alternative:

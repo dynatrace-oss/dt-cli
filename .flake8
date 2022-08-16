@@ -7,7 +7,7 @@ ignore=
     D104,
     D100,
     # one-line docstring formatting
-    # it's anyoing when you actually want to add more
+    # it's annoying when you actually want to add more
     D200,
     # no machine shall compel human speech
     # it also doesn't work all that well
@@ -19,7 +19,6 @@ ignore=
     D103,
     D101,
     D102, D107, D105,
-    R302,
     # TODO: questionable
     C417, C416
 per-file-ignores =
