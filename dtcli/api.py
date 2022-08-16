@@ -105,7 +105,7 @@ class DynatraceAPIClient:
         raise SystemExit(f"Target version {target_version} does not exist. \nAvailable versions: {versions}")
 
     def download_schemas(self, target_version: str, download_dir: str):
-        """Downloads schemas from choosen version."""
+        """Downloads schemas from chosen version."""
         version = self.get_schema_target_version(target_version)
 
         if not os.path.exists(download_dir):

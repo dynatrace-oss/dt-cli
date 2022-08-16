@@ -38,6 +38,9 @@ from dtcli.shim import _Path_is_relative
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+FORCE_OPTION = typer.Option(False,
+                            "--force", "-f",
+                            help="Ignore subtleties, overwrite without prompt, when in doubt - advance!")
 
 
 def validate_parse_subject(ctx, param, value):
@@ -610,36 +613,23 @@ def build(**kwargs):
     )
 
 
-@extension.command()
-@click.option(
-    "--src",
-    "--source",
-    "source",
-    default=const.DEFAULT_EXTENSION_DIR2,
-    type=click.Path(exists=True, file_okay=False),
-    callback=mk_click_callback(Path),
-    show_default=True,
-    help="Directory where the `extension.yaml' and other extension files are located",
-)
-@click.option(
-    "-o",
-    "--output",
-    "destination",
-    type=click.Path(writable=True, dir_okay=False),
-    default=str(const.DEFAULT_BUILD_OUTPUT),
-    callback=mk_click_callback(Path),
-    show_default=True,
-    help="Location where the extension package will be written",
-)
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    default=False,
-    show_default=True,
-    help="Ignore subtleties, overwrite without prompt, when in doubt - advance!",
-)
-def assemble(source, destination, force):
+@typer_extension.command()
+def assemble(
+        source: Path = typer.Option(
+            const.DEFAULT_EXTENSION_DIR2,
+            "--src", "--source",
+            exists=True, dir_okay=True,
+            readable=True,
+            help="Directory where the `extension.yaml' and other extension files are located",
+        ),
+        destination: Path = typer.Option(
+            str(const.DEFAULT_BUILD_OUTPUT),
+            "-o", "--output",
+            writable=True, dir_okay=False,
+            help="Location where the extension package will be written",
+        ),
+        force: bool = FORCE_OPTION
+):
     """
     Build extension package.
     """
@@ -674,11 +664,7 @@ def sign(
         exists=True, dir_okay=False,
         help="Location of the fused key-certificate for signing with",
     ),
-    # TODO: extract this as a common option
-    force: bool = typer.Option(
-        False,
-        "--force", "-f",
-        help="Ignore subtleties, overwrite without prompt, when in doubt - advance!")
+    force: bool = FORCE_OPTION
 ):
     """
     Produce signed extension package.
@@ -859,19 +845,7 @@ def prepare_python(path_to_setup_py, **kwargs):
     )
 
 
-# becasue of how typer works there has to be at least 2 commands for it to create a group
-# TODO: remove this after another command is migrated
-# https://typer.tiangolo.com/tutorial/using-click/#how-typer-works
-@typer_extension.command()
-def please_remove_this_later():
-    pass
-
-
 for name, cmd in typer.main.get_command(typer_extension).commands.items():
-    # TODO: remove this after another command is migrated
-    if name == "please-remove-this-later":
-        continue
-
     extension.add_command(cmd, name)
 
 
