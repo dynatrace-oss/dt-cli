@@ -20,6 +20,7 @@ import platform
 import re
 import sys
 from pathlib import Path
+from typing import List
 
 import click
 import requests  # noqa:I201
@@ -43,7 +44,26 @@ FORCE_OPTION = typer.Option(False,
                             help="Ignore subtleties, overwrite without prompt, when in doubt - advance!")
 
 
-def validate_parse_subject(ctx, param, value):
+def validate_ca_subject(subjects: List[str]):
+    if subjects is None:
+        return None
+
+    def split_and_verify(subject: str):
+        key, val = subject.split("=")
+        if key not in signing.X509NameAttributes:
+            raise typer.BadParameter(
+                f"subject attributes must be one of {list(signing.X509NameAttributes)}. Got '{key}' instead."
+            )
+        return key, val
+
+    try:
+        dicta = dict(map(split_and_verify, subjects))
+        return dicta
+    except ValueError:
+        raise typer.BadParameter(f"format must be 'key=value' got: '{subjects}'")
+
+
+def validate_parse_subject(ctx, param, value: str):
     if value is None:
         return None
 
@@ -203,9 +223,15 @@ def extension_dev():
     pass
 
 
+_deprecate_above, _deprecate_below = deprecated("dt ext generate-developer-pem")
+_deprecate_above_cert, _deprecate_below_cert = deprecated("dt ext generate-certificate-authority")
+
+
+@_deprecate_above_cert
 @extension.command(
     help="Creates CA key and certificate, needed to create developer certificate used for extension signing"
 )
+@_deprecate_below_cert
 @click.option("--ca-cert", default=const.DEFAULT_CA_CERT, show_default=True, help="CA certificate output path")
 @click.option("--ca-key", default=const.DEFAULT_CA_KEY, show_default=True, help="CA key output path")
 @click.option(
@@ -254,7 +280,37 @@ def genca(**kwargs):
     )
 
 
-_deprecate_above, _deprecate_below = deprecated("dt ext generate-developer-pem")
+@typer_extension.command()
+def generate_certificate_authority(
+    ca_cert: str = typer.Option(
+        const.DEFAULT_CA_CERT,
+        help="CA certificate output path"
+    ),
+    ca_key: str = typer.Option(
+        const.DEFAULT_CA_KEY,
+        help="CA key output path"
+    ),
+    ca_subject: List[str] = typer.Option(
+        ["CN=Default Extension CA", "O=Some Company", "OU=Extension CA"],
+        help='Certificate subjects. Accepted format is "key=value"'
+    ),
+    force: bool = FORCE_OPTION,
+    days_valid: int = typer.Option(
+        const.DEFAULT_CERT_VALIDITY,
+        help="Number of days certificate will be valid"
+    ),
+):
+    """
+    Creates CA key and certificate, needed to create developer certificate used for extension signing.
+    """
+    _genca(
+        ca_cert_path=ca_cert,
+        ca_key_path=ca_key,
+        force=force,
+        subject=validate_ca_subject(ca_subject),
+        days_valid=days_valid,
+        ca_passphrase=None
+    )
 
 
 @_deprecate_above
