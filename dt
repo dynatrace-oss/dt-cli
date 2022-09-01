@@ -1,2 +1,3 @@
+#!/usr/bin/env bash
 make setup
-poetry run dt $@
+poetry run dt "$@"
