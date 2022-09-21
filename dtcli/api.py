@@ -41,6 +41,8 @@ class DynatraceAPIClient:
 
     def acquire_extensions(self):
         r = self.requests.get(f"{self.url_base}/api/v2/extensions", headers=self.headers)
+        ext_num_tot = r.json()["totalCount"]
+        r = self.requests.get(f"{self.url_base}/api/v2/extensions?pageSize={ext_num_tot}", headers=self.headers)
         r.raise_for_status()
         return r.json()["extensions"]
 
