@@ -784,7 +784,13 @@ def delete(**kwargs):
     Example: custom:com.dynatrace.extension.extension-name
     """
     token = kwargs["api_token_path"]
-    delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
+    try:
+        delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 404:
+            raise SystemExit(err)
+        else:
+            raise
 
 
 @extension.command(
