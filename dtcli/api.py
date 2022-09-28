@@ -115,7 +115,8 @@ class DynatraceAPIClient:
 
         header = self.headers
         header["accept"] = "application/octet-stream"
-        schema_file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
+        schema_file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}",
+                                        headers=header, stream=True)
         schema_file.raise_for_status()
         zfile = zipfile.ZipFile(io.BytesIO(schema_file.content))
 
