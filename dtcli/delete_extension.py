@@ -5,6 +5,7 @@ from dtcli.api import DynatraceAPIClient
 
 import requests
 
+
 class State:
     def __init__(self, d):
         self.d = d
@@ -63,7 +64,6 @@ def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> S
         versions = client.acquire_extension_versions(extension)
     except requests.exceptions.HTTPError as err:
         raise SystemExit(err)
-    
     # TODO: is this really any?
     extension_data: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for e in versions:
