@@ -41,6 +41,11 @@ class DynatraceAPIClient:
 
     def acquire_extensions(self):
         r = self.requests.get(f"{self.url_base}/api/v2/extensions", headers=self.headers)
+        # Temporary solution. It can cause too much data usage.
+        # Also we can hit a hard backend limit wrg to page size.
+        # Which can cause false negatives.
+        ext_num_tot = r.json()["totalCount"]
+        r = self.requests.get(f"{self.url_base}/api/v2/extensions?pageSize={ext_num_tot}", headers=self.headers)
         r.raise_for_status()
         return r.json()["extensions"]
 
@@ -113,9 +118,10 @@ class DynatraceAPIClient:
 
         header = self.headers
         header["accept"] = "application/octet-stream"
-        file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}", headers=header, stream=True)
-        file.raise_for_status()
-        zfile = zipfile.ZipFile(io.BytesIO(file.content))
+        schema_file = self.requests.get(self.url_base + f"/api/v2/extensions/schemas/{version}",
+                                        headers=header, stream=True)
+        schema_file.raise_for_status()
+        zfile = zipfile.ZipFile(io.BytesIO(schema_file.content))
 
         THRESHOLD_ENTRIES = 10000
         THRESHOLD_SIZE = 1000000000

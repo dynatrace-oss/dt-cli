@@ -58,11 +58,6 @@ def acquire_state(client: DynatraceAPIClient) -> State:
 
 
 def acquire_state_for_extension(client: DynatraceAPIClient, extension: str) -> State:
-    extensions_listing = list(map(lambda e: e["extensionName"], client.acquire_extensions()))
-
-    if extension not in extensions_listing:
-        raise Exception("Extension doesn't exist")
-
     versions = client.acquire_extension_versions(extension)
     # TODO: is this really any?
     extension_data: Dict[str, Dict[str, Any]] = defaultdict(dict)
