@@ -788,7 +788,7 @@ def delete(**kwargs):
         delete_extension.wipe(fqdn=kwargs["extension"], tenant=kwargs["tenant_url"], token=token)
     except requests.exceptions.HTTPError as err:
         if err.response.status_code == 404:
-            raise SystemExit(err)
+            raise click.BadParameter(err)
         else:
             raise
 

@@ -8,6 +8,7 @@ lint: setup
 .venv: poetry.lock
 	python -m venv .venv
 	poetry install
+	touch .venv
 
 type-check: setup
 	#poetry run mypy --strict dtcli/scripts/dt.py
