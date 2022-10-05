@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 # Install package build system
 RUN pip install poetry
-RUN apt-get update && apt-get install -y binutils readelf objcopy pathcelf
+RUN apt-get update && apt-get install -y binutils patchelf
 
 # Project directory must be mounted in /app
 WORKDIR /app
