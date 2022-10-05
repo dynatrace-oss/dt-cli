@@ -214,7 +214,7 @@ jobs:
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry run staticx dist/dt dist/dt-static
+            poetry run staticx --strip dist/dt dist/dt-static
 
           docker run \
             -v $(pwd)/dist:/app/dist \
@@ -224,6 +224,7 @@ jobs:
       - name: Sanity
         run: |
           ./dist/dt-static
+          mv dist/dt-static dist/dt
 
       - name: Cache built linux binary artifact
         uses: actions/upload-artifact@v2
