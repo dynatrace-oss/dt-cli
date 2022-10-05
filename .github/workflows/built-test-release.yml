@@ -215,13 +215,13 @@ jobs:
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
             poetry run staticx dist/dt dist/dt-static
+
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            chmod +x dist/dt-static
+            chown $(id -u):$(id -g) dist/dt-static
 
-      # TODO: remove this
-      - name: Actually run it again
+      - name: Sanity
         run: |
           ./dist/dt-static
 
