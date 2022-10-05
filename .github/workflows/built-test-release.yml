@@ -209,6 +209,21 @@ jobs:
         run: |
           ./dist/dt
 
+      - name: Make the binary static
+        run: |
+          mkdir dist
+          docker run \
+            -v $(pwd)/dist:/app/dist \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            poetry run staticx \
+                #--strip \
+                dist/dt \
+                ble 
+
+      - name: Actually run it again
+        run: |
+          ./ble
+
       - name: Cache built linux binary artifact
         uses: actions/upload-artifact@v2
         with:
