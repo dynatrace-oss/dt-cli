@@ -168,7 +168,7 @@ jobs:
 
       - name: Build package
         run: |
-          mkdir dist
+          mkdir -p dist
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
@@ -194,7 +194,7 @@ jobs:
 
       - name: Build binary distribution
         run: |
-          mkdir dist
+          mkdir -p dist
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
@@ -211,7 +211,6 @@ jobs:
 
       - name: Make the binary static
         run: |
-          mkdir dist
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
