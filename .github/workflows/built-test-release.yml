@@ -214,10 +214,7 @@ jobs:
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry run staticx \
-                #--strip \
-                dist/dt \
-                ble 
+            poetry run staticx dist/dt ble
 
       # TODO: remove this
       - name: Actually run it again
