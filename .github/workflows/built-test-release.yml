@@ -168,7 +168,7 @@ jobs:
 
       - name: Build package
         run: |
-          mkdir dist
+          mkdir -p dist
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
@@ -194,7 +194,7 @@ jobs:
 
       - name: Build binary distribution
         run: |
-          mkdir dist
+          mkdir -p dist
           docker run \
             -v $(pwd)/dist:/app/dist \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
@@ -208,6 +208,23 @@ jobs:
       - name: Actually run it
         run: |
           ./dist/dt
+
+      - name: Make the binary static
+        run: |
+          docker run \
+            -v $(pwd)/dist:/app/dist \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            poetry run staticx --strip dist/dt dist/dt-static
+
+          docker run \
+            -v $(pwd)/dist:/app/dist \
+            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
+            chown $(id -u):$(id -g) dist/dt-static
+
+      - name: Sanity
+        run: |
+          ./dist/dt-static
+          mv dist/dt-static dist/dt
 
       - name: Cache built linux binary artifact
         uses: actions/upload-artifact@v2

@@ -12,7 +12,7 @@ packages = [
 ]
 readme = "README.md"
 repository = "https://github.com/dynatrace-oss/dt-cli"
-version = "1.6.9"
+version = "1.6.10"
 
 
 [tool.poetry.dependencies]
@@ -49,6 +49,7 @@ pytest-mock = "^3.5"
 pytest-mypy = "^0.8"
 radon = "^4.0"
 sphinxcontrib-programoutput = "^0.17"
+staticx = "^0.13.8"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
