@@ -4,7 +4,9 @@ on:
     branches:
       - main
   push:
-    # Push only works for tags in the main branch.
+    # this works as an OR
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -45,6 +47,7 @@ jobs:
 
   deploy-image-for-cache:
     name: Deploy :latest env container
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: build-dev-docker-image
     runs-on: ubuntu-latest
     timeout-minutes: 1
