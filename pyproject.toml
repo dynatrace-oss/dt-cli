@@ -19,10 +19,12 @@ PyYAML = "^5.4"
 asn1crypto = "^1.4"
 click = "^7.1"
 click-aliases = "^1.0"
-cryptography = "^3.4"
+cryptography = ">=3.4,<40"
 python = "^3.8"
 wheel = "^0.36"
 requests = "^2.26"
+dt = "^1.1.48"
+ilexconf = "^0.9.6"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^3.5"
@@ -48,12 +50,12 @@ pytest-mypy = "^0.8"
 radon = "^4.0"
 sphinxcontrib-programoutput = "^0.17"
 
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
-
 [tool.poetry.scripts]
-dt = 'dtcli.scripts.dt:main'
+dt = 'dtcli.cli.dt:main'
 
 [tool.black]
 line-length = 120
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
