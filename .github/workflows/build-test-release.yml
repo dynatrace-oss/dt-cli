@@ -49,7 +49,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs: build-dev-docker-image
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     steps:
       - name: Acquire docker environment image
         run: |
@@ -64,11 +64,11 @@ jobs:
   check-line-endings:
     name: Check CRLF line endings
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     needs: build-dev-docker-image
     steps:
       - name: Checkout repository contents
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Use action to check for CRLF endings
         uses: erclu/check-crlf@v1
@@ -76,7 +76,7 @@ jobs:
   run-tests:
     name: Verify code
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     needs: build-dev-docker-image
     steps:
       - name: Acquire docker environment image
@@ -115,9 +115,11 @@ jobs:
     # Builds python package using poetry.
     #
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     needs: build-dev-docker-image
     steps:
+      - uses: actions/checkout@v2
+
       - name: Acquire docker environment image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
@@ -127,9 +129,10 @@ jobs:
         run: |
           mkdir -p dist
           docker run \
-            -v $(pwd)/dist:/app/dist \
+            -v "$(pwd)/dist:/app/dist" \
+            -v "$(pwd):/src" \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry build
+            bash -c 'cp -f /src/pyproject.toml /app/pyproject.toml && poetry build'
 
       - name: Cache built package artifacts
         uses: actions/upload-artifact@v2
@@ -248,6 +251,8 @@ jobs:
       - build-package
       - run-tests
     steps:
+      - uses: actions/checkout@v2
+
       - name: Acquire docker environment image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
@@ -256,14 +261,14 @@ jobs:
       - name: Download cached built package
         uses: actions/download-artifact@v2
         with:
-          name: package
-          path: dist
+          path: artifacts
 
       - name: Publish to PyPI
         env:
           PYPI_TOKEN: "${{ secrets.PYPI_TOKEN }}"
         run: |
           docker run \
-            -v "$(pwd)/dist:/app/dist" \
+            -v "$(pwd)/artifacts/package:/app/dist" \
+            -v "$(pwd):/src" \
             docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry publish --username __token__ --password "$PYPI_TOKEN"
+            bash -c "cp -f /src/pyproject.toml /app/pyproject.toml && poetry publish --username __token__ --password $PYPI_TOKEN"
