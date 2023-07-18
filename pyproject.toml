@@ -16,7 +16,7 @@ version = "1.6.12"
 
 
 [tool.poetry.dependencies]
-PyYAML = "^5.4"
+PyYAML = "^6.0"
 asn1crypto = "^1.4"
 click-aliases = "^1.0"
 cryptography = ">=3.4,<40"
