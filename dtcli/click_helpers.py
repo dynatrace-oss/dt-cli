@@ -17,8 +17,8 @@ def mk_click_callback(f: Callable[[T], U]) -> Callable[[Any, Any, T], U]:
 
 
 # TODO: type the returns
-def _deprecated_above(deprecation_warning: str):
-    def decorator(f):
+def _deprecated_above(deprecation_warning: str) -> Callable[[click.core.Command], None]:
+    def decorator(f: click.core.Command) -> None:
         assert isinstance(f, click.core.Command), "decorator is placed above @click.command," \
                                                   " therefore decorating a click Command," \
                                                   " instead of a bare function"
