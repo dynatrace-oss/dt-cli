@@ -42,6 +42,10 @@ def test_generate_ca():
         not_valid_after,
         passphrase,
     )
+
+    os.chmod(cert_path, 0o644)
+    os.chmod(key_path, 0o644)
+    
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
 
@@ -79,6 +83,10 @@ def test_generate_ca_empty_attributes():
     key_path = "test_ca_key.key"
 
     signing.generate_ca(cert_path, key_path, {}, datetime.datetime.today() + datetime.timedelta(days=1))
+
+    os.chmod(cert_path, 0o644)
+    os.chmod(key_path, 0o644)
+
     assert os.path.exists(cert_path)
     assert os.path.exists(key_path)
 
@@ -128,6 +136,10 @@ def test_generate_cert():
         datetime.datetime.today() + datetime.timedelta(days=1),
         ca_passphrase,
     )
+    
+    os.chmod(ca_cert_path, 0o644)
+    os.chmod(ca_key_path, 0o644)
+
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
 
@@ -153,6 +165,10 @@ def test_generate_cert():
         ca_passphrase,
         dev_passphrase,
     )
+
+    os.chmod(dev_cert_path, 0o644)
+    os.chmod(dev_key_path, 0o644)
+
     assert os.path.exists(dev_cert_path)
     assert os.path.exists(dev_key_path)
 
@@ -204,6 +220,10 @@ def test_generate_cert_issuer_eq_subject():
         },
         datetime.datetime.today() + datetime.timedelta(days=1),
     )
+
+    os.chmod(ca_cert_path, 0o644)
+    os.chmod(ca_key_path, 0o644)
+
     assert os.path.exists(ca_cert_path)
     assert os.path.exists(ca_key_path)
 
