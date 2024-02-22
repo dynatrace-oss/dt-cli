@@ -518,8 +518,11 @@ _deprecate_above, _deprecate_below = deprecated("dt ext assemble or dt ext sign"
 
 @_deprecate_above
 @extension.command(
-    help=f"Build and sign extension package from the given extension directory (default: {const.DEFAULT_EXTENSION_DIR})"
-         f" that contains extension.yaml and additional asset directories"
+    help=(
+        f"Build and sign extension package from the given extension directory "
+        f"(default: {const.DEFAULT_EXTENSION_DIR}) "
+        f"that contains extension.yaml and additional asset directories"
+    )
 )
 @_deprecate_below
 @click.option(
@@ -686,10 +689,16 @@ def sign(
             return permissions == const.REQUIRED_PRIVATE_KEY_PERMISSIONS
 
     if not is_key_permissions_ok() and not force:
-        raise click.BadParameter(f"key {certkey} has too lax permissions - we recommend "
-                                 f"{oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the permissions via "
-                                 f"`chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {certkey}` "
-                                 f"and try again or try again with --force to proceed irregardless", param_hint="--key")
+        raise click.BadParameter(
+            (
+                f"key {certkey} has permissions that are too relaxes - we recommend "
+                f"{oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)}, please fix the "
+                f"permissions via "
+                f"chmod {oct(const.REQUIRED_PRIVATE_KEY_PERMISSIONS)[-3:]} {certkey} "
+                f"and try again or try again with --force to proceed irregardless"
+            ),
+            param_hint="--key",
+        )
 
     if destination.exists():
         if force:
