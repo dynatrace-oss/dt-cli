@@ -21,11 +21,14 @@ def validate(extension_zip_file, tenant_url, api_token):
     url = f"{tenant_url}/api/v2/extensions?validateOnly=true"
 
     with open(extension_zip_file, "rb") as extzf:
-        headers = {"Accept": "application/json; charset=utf-8", "Authorization": f"Api-Token {api_token}"}
+        headers = {
+            "Accept": "application/json; charset=utf-8",
+            'Content-Type': 'application/octet-stream',
+            "Authorization": f"Api-Token {api_token}",
+        }
         try:
-            response = requests.post(
-                url, files={"file": (extension_zip_file, extzf, "application/zip")}, headers=headers
-            )
+            extzf_data = extzf.read()
+            response = requests.post(url, headers=headers, data=extzf_data)
             response.raise_for_status()
             print("Extension validation successful!")
         except requests.exceptions.HTTPError:
@@ -37,11 +40,14 @@ def upload(extension_zip_file, tenant_url, api_token):
     url = f"{tenant_url}/api/v2/extensions"
 
     with open(extension_zip_file, "rb") as extzf:
-        headers = {"Accept": "application/json; charset=utf-8", "Authorization": f"Api-Token {api_token}"}
+        headers = {
+            "Accept": "application/json; charset=utf-8",
+            'Content-Type': 'application/octet-stream',
+            "Authorization": f"Api-Token {api_token}",
+        }
         try:
-            response = requests.post(
-                url, files={"file": (extension_zip_file, extzf, "application/zip")}, headers=headers
-            )
+            extzf_data = extzf.read()
+            response = requests.post(url, headers=headers, data=extzf_data)
             response.raise_for_status()
             print("Extension upload successful!")
         except requests.exceptions.HTTPError:
