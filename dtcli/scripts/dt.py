@@ -188,9 +188,26 @@ def extension():
     """
     Set of utilities for signing, building and uploading extensions.
 
-    \b
     Example flow:
-        gencerts -> build -> upload
+        1. (optional) When you don't have a developer certificate yet
+           a) Generate CA key and certificate
+           b) Generate developer key and certificate from the CA
+
+           $ dt ext genca
+           $ dt ext generate-developer-pem --ca-crt ca.crt --ca-key ca.key -o dev.pem
+
+        2. Build and sign the extension
+
+           $ dt ext assemble
+           $ dt ext sign --key dev.pem
+
+        3. (optional) Validate the assembled and signed bundle with your Dynatrace tenant
+
+           $ dt ext validate bundle.zip --tenant-url https://<tenantid>.live.dynatrace.com --api-token <token>
+
+        4. Upload the extension to your Dynatrace tenant
+        
+           $ dt ext upload bundle.zip --tenant-url https://<tenantid>.live.dynatrace.com --api-token <token>
     """
     pass
 # TODO: turn completion to True when implementing completion and somehow merge it with click
