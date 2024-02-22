@@ -12,102 +12,53 @@ on:
   workflow_dispatch:
 
 jobs:
-  # This docker image is essential for all other steps
-  build-dev-docker-image:
-    name: Build development docker image
-    runs-on: ubuntu-latest
-    # should be <1 in most cases, but full no-cache rebuilt
-    # can take a little bit more than 2
-    timeout-minutes: 4
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Acquire cache
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
-
-      - name: Ensure cachability
-        run: |
-          # otherwise the first layer changes and invalidates the cache
-          # even though the dependencies have not changed at all
-          sed -i 's/^version = ".*"$/version = "0.0.1"/' pyproject.toml 
-
-      - name: Build docker image
-        run: |
-          docker build \
-            --tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            --cache-from docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest \
-            .
-
-      - name: Deploy
-        run: |
-          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
-
-  deploy-image-for-cache:
-    name: Deploy :latest env container
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: build-dev-docker-image
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Acquire docker environment image
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
-
-      - name: Deploy image with latest tag
-        run: |
-          docker tag docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
-          docker push docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:latest
-
   check-line-endings:
     name: Check CRLF line endings
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: build-dev-docker-image
     steps:
       - name: Checkout repository contents
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Use action to check for CRLF endings
         uses: erclu/check-crlf@v1
     
   run-tests:
-    name: Verify code
+    name: Run tests
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-    needs: build-dev-docker-image
+    timeout-minutes: 5
+    needs: check-line-endings
     steps:
-      - name: Acquire docker environment image
+      - name: Checkout repository contents
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install poetry
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+          pip install poetry
+          poetry install
 
       - name: Run pytest tests
         run: |
-          docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry run pytest
+          poetry run pytest
 
-      - name: Run mypy tests
-        run: |
-          docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            bash -c '! poetry run mypy --strict dtcli | grep "Module has no attribute"'
+      # Disabled by vduseev on 2024-02-21
+      # because it's clear we are not using mypy here
+      #- name: Run mypy tests
+      #  run: |
+      #    bash -c '! poetry run mypy --strict dtcli | grep "Module has no attribute"'
 
       - name: Run flake8 lint checker
         run: |
-          docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry run flake8 dtcli
-            # TODO: change above to make
+          poetry run flake8 dtcli
 
       - name: Run test coverage report
         run: |
-          docker run \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            poetry run pytest --cov . --cov-report html || true
+          poetry run pytest --cov . --cov-report html || true
 
   build-package:
     name: Build package
@@ -115,91 +66,32 @@ jobs:
     # Builds python package using poetry.
     #
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-    needs: build-dev-docker-image
+    timeout-minutes: 5
+    needs: run-tests
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository contents
+        uses: actions/checkout@v4
 
-      - name: Acquire docker environment image
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install poetry
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+          pip install poetry
+          poetry install
 
       - name: Build package
         run: |
-          mkdir -p dist
-          docker run \
-            -v "$(pwd)/dist:/app/dist" \
-            -v "$(pwd):/src" \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            bash -c 'cp -f /src/pyproject.toml /app/pyproject.toml && poetry build'
+          poetry build
 
       - name: Cache built package artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: package
           path: |
             dist/*
-
-  # Disabled 2023-07-18
-  # vduseev:
-  #   Couldn't make pyinstaller work with the other packages.
-  #   Had to install at least 4.6 and limit Python to <3.13 but even that
-  #   didn't help and the built binary produces:
-  #     FileNotFoundError: [Errno 2] No such file or directory:
-  #     '/tmp/_MEI1dmuMP/jsonschema_specifications/schemas'
-  #     [504] Failed to execute script '__main__' due to unhandled exception!
-  # build-linux-binary:
-  #   name: Build linux binary
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 1
-  #   needs: build-dev-docker-image
-  #   steps:
-  #     - name: Acquire docker environment image
-  #       run: |
-  #         echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-  #         docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
-
-  #     - name: Build binary distribution
-  #       run: |
-  #         mkdir -p dist
-  #         docker run \
-  #           -v $(pwd)/dist:/app/dist \
-  #           docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-  #           poetry run pyinstaller \
-  #               dtcli/__main__.py \
-  #               --name dt \
-  #               --clean \
-  #               -p "$(poetry env info -p)/lib/python3.10/site-packages" \
-  #               --onefile
-
-  #     - name: Actually run it
-  #       run: |
-  #         ./dist/dt
-
-  #     - name: Make the binary static
-  #       run: |
-  #         docker run \
-  #           -v $(pwd)/dist:/app/dist \
-  #           docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-  #           poetry run staticx --strip dist/dt dist/dt-static
-
-  #         docker run \
-  #           -v $(pwd)/dist:/app/dist \
-  #           docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-  #           chown $(id -u):$(id -g) dist/dt-static
-
-  #     - name: Sanity
-  #       run: |
-  #         ./dist/dt-static
-  #         mv dist/dt-static dist/dt
-
-  #     - name: Cache built linux binary artifact
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: linux-binary
-  #         path: |
-  #           dist/dt
 
   github-release:
     name: Create GitHub release
@@ -212,32 +104,33 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-package
-      - run-tests
     steps:
       - uses: actions/checkout@v2
-
-      - name: Download cached build artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
 
       - name: Generate changelog
         run: |
           cat > CHANGELOG.md <<EOT
-          ## CHANGELOG
+          # CHANGELOG
 
           **Release**: dt-cli (${GITHUB_REF#refs/tags/})
 
-          ### Changes
+          # Changes
 
           EOT
-          git log --format=format:"%s" >> CHANGELOG.md
+          
+          git log --format=format:"%ad: %s" --date=short >> CHANGELOG.md
+
+      - name: Download cached built package
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/package/*
+            dist/*
             LICENSE
           body_path: CHANGELOG.md
         env:
@@ -251,24 +144,26 @@ jobs:
       - build-package
       - run-tests
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Acquire docker environment image
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install poetry
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u $GITHUB_ACTOR --password-stdin
-          docker pull docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6}
+          pip install poetry
+          poetry install
 
       - name: Download cached built package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: package
+          path: dist
 
       - name: Publish to PyPI
         env:
-          PYPI_TOKEN: "${{ secrets.PYPI_TOKEN }}"
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          docker run \
-            -v "$(pwd)/artifacts/package:/app/dist" \
-            -v "$(pwd):/src" \
-            docker.pkg.github.com/$GITHUB_REPOSITORY/dtcli-env:${GITHUB_SHA:0:6} \
-            bash -c "cp -f /src/pyproject.toml /app/pyproject.toml && poetry publish --username __token__ --password $PYPI_TOKEN"
+          poetry publish --username __token__ --password $PYPI_TOKEN
