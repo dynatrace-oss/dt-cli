@@ -1,0 +1,70 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check-line-endings:
+    name: Check CRLF line endings
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout repository contents
+        uses: actions/checkout@v4
+
+      - name: Use action to check for CRLF endings
+        uses: erclu/check-crlf@v1
+    
+  run-tests:
+    name: Run tests
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    needs: check-line-endings
+    steps:
+      - name: Checkout repository contents
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run pytest tests
+        run: |
+          poetry run pytest
+
+      # Disabled by vduseev on 2024-02-21
+      # because it's clear we are not using mypy here
+      #- name: Run mypy tests
+      #  run: |
+      #    bash -c '! poetry run mypy --strict dtcli | grep "Module has no attribute"'
+
+      - name: Run flake8 lint checker
+        run: |
+          poetry run flake8 dtcli
+
+      - name: Run test coverage report
+        run: |
+          poetry run pytest --cov . --cov-report html || true
+
+      - name: Check that the package can be built
+        run: |
+          poetry build
+
+      - name: Check that we can generate a CA certificate
+        run: |
+          poetry run dt ext genca --ca-cert ./ca.pem --ca-key ./ca.key --ca-subject "/CN=Default/O=Company/OU=Extension" --no-ca-passphrase --force

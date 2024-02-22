@@ -55,8 +55,11 @@ def deprecated(alternative: Optional[str], alternative_help: Optional[str] = Non
     it the hacky way.
     """
     if alternative:
-        alt_text = f"\nPlease consider using {click.style(alternative,fg='bright_cyan')} instead." \
-                   f"{' ' + alternative_help.capitalize() + '.' if alternative_help else ''}\n"
+        alt_text = (
+            f"\nPlease consider using {click.style(alternative, fg='bright_cyan')} "
+            f"instead. "
+            f"{' ' + alternative_help.capitalize() + '.' if alternative_help else ''}\n"
+        )
     else:
         alt_text = ""
     warning = f"{click.style('This function is deprecated', fg='red')}.{alt_text}"
