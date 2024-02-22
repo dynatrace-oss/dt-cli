@@ -206,7 +206,7 @@ def extension():
            $ dt ext validate bundle.zip --tenant-url https://<tenantid>.live.dynatrace.com --api-token <token>
 
         4. Upload the extension to your Dynatrace tenant
-        
+
            $ dt ext upload bundle.zip --tenant-url https://<tenantid>.live.dynatrace.com --api-token <token>
     """
     pass
