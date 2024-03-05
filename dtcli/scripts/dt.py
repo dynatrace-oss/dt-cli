@@ -126,6 +126,21 @@ def token_load(ctx, param, value):
 
 
 def parse_tenant_url(value: str) -> str:
+    if value == "-":
+        try:
+            value = const.DEFAULT_TENANT_PATH
+            with open(value) as f:
+                try:
+                    tenant = f.readlines()[0].rstrip()
+                except IndexError:
+                    raise click.BadArgumentUsage("Token file exist but is empty. No token applied.")
+            value = tenant
+        except FileNotFoundError:
+            tenant = os.getenv("DTCLI_API_TENANT")
+            if tenant is None:
+                raise click.UsageError("Virtual environment DTCLI_API_TENANT doesn't exist. No tenant applied.")
+            value = tenant
+
     if value.endswith("/"):
         value = value[:-1]
 
@@ -167,7 +182,8 @@ tenant_url_click = click.option(  # noqa:E305
     "--tenant-url",
     callback=mk_click_callback(parse_tenant_url),
     prompt=True,
-    help="Dynatrace environment URL, e.g., https://<tenantid>.live.dynatrace.com"
+    help="Dynatrace environment URL, e.g. https://<tenantid>.live.dynatrace.com, "
+         "to read from file type '-'"
 )
 
 tenant_url = compose_click_decorators_2(tenant_url_click, tenant_error_handler)
