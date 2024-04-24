@@ -20,10 +20,10 @@ asn1crypto = "^1.4"
 click-aliases = "^1.0"
 cryptography = ">3"
 python = "^3.8"
-wheel = "^0.37"
+wheel = "^0"
 requests = "^2.26"
 jsonschema = "^4.7"
-typer = "^0.6"
+typer = "^0"
 
 [tool.poetry.group.dev.dependencies]
 Sphinx = ">=3.5"
