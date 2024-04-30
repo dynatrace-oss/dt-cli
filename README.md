@@ -50,7 +50,7 @@ pip install dt-cli
    1. Generate developer key and certificate from the CA
 
       ```shell
-      $ dt ext generate-developer-pem --ca-crt ca.crt --ca-key ca.key -o dev.pem
+      $ dt ext generate-developer-pem --ca-crt ca.pem --ca-key ca.key -o dev.pem
       Name: Ext
       Loading CA private key ca.key
       Loading CA certificate ca.pem

@@ -194,7 +194,7 @@ def extension():
            b) Generate developer key and certificate from the CA
 
            $ dt ext genca
-           $ dt ext generate-developer-pem --ca-crt ca.crt --ca-key ca.key -o dev.pem
+           $ dt ext generate-developer-pem --ca-crt ca.pem --ca-key ca.key -o dev.pem
 
         2. Build and sign the extension
 
