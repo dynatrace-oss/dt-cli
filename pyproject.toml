@@ -1,7 +1,7 @@
 [tool.poetry]
 authors = ["Vagiz Duseev <vagiz.duseev@dynatrace.com>"]
 description = "Dynatrace CLI"
-documentation = "https://dt-cli.readthedocs.io"
+documentation = "https://github.com/dynatrace-oss/dt-cli"
 homepage = "https://github.com/dynatrace-oss/dt-cli"
 keywords = ["dynatrace", "cli", "extensions"]
 license = "Apache-2.0"
