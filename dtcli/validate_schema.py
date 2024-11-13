@@ -3,9 +3,11 @@ import pathlib
 from pathlib import Path
 from typing import Any, List, Union, Callable
 
-import yaml
-from referencing import Registry, Resource
 from jsonschema import Draft202012Validator, Validator, ValidationError
+
+from referencing import Registry, Resource
+
+import yaml
 
 
 YamlAST = Union[yaml.ScalarNode, yaml.SequenceNode, yaml.MappingNode]
