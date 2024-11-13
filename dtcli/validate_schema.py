@@ -1,11 +1,11 @@
 import json
 import pathlib
 from pathlib import Path
-from typing import List, Union, Callable
-
-import jsonschema
+from typing import Any, List, Union, Callable
 
 import yaml
+from referencing import Registry, Resource
+from jsonschema import Draft202012Validator, Validator, ValidationError
 
 
 YamlAST = Union[yaml.ScalarNode, yaml.SequenceNode, yaml.MappingNode]
@@ -36,37 +36,60 @@ def backtrack_yaml_location(path: List[Union[int, str]], ast: YamlAST) -> yaml.e
         assert 0, "unreachable switch branch"
 
 
-def validate_schema(instance_object: Path, schema_entrypoint: Path, warn: Callable[[str], None]) -> list:
-    subschemas_path = pathlib.Path(schema_entrypoint).parent
+def remove_unsupported_regex_patterns(data: Any) -> dict:
+    if isinstance(data, dict):
+        cleanedup_dict = {
+            k: remove_unsupported_regex_patterns(v) for k, v in data.items()
+            # if not (k == "pattern" and isinstance(v, str) and r"\\p" in v)
+            if not (k == "pattern" and isinstance(v, str) and r"\p" in v)
+        }
+        return cleanedup_dict
+    elif isinstance(data, list):
+        cleanedup_list = [
+            remove_unsupported_regex_patterns(i) for i in data
+        ]
+        return cleanedup_list
+    else:
+        return data
 
-    with open(instance_object, "r") as yaml_in:
+
+def validate_schema(extension_yaml_path: Path, extension_schema_path: Path, warn: Callable[[str], None]) -> list:
+    schema_dir_path = pathlib.Path(extension_schema_path).parent
+
+    with open(extension_yaml_path, "r") as yaml_in:
         instance = yaml.safe_load(yaml_in)
 
-    with open(schema_entrypoint) as f:
-        s = json.load(f)
+    with open(extension_schema_path) as f:
+        schema_data = json.load(f)
+        cleanedup_schema_data = remove_unsupported_regex_patterns(schema_data)
 
-    schema_store = {}
-    for subschema_candidate in filter(lambda f: f.is_file, pathlib.Path(subschemas_path).iterdir()):
+    subschema_paths = [
+        p for p in schema_dir_path.iterdir() if p.is_file() and extension_schema_path.absolute() != p.absolute()
+    ]
+
+    resources: list[tuple[str, dict]] = []
+    for c in subschema_paths:
         try:
-            with open(subschema_candidate) as f:
-                sub = json.load(f)
+            with open(c) as f:
+                subschema_data = json.load(f)
         except json.decoder.JSONDecodeError:
-            warn(f"skipping subschema {subschema_candidate}, malformed json")
-            # print(f"skipping subschema {subschema_candidate}, malformed json", file=sys.stderr)
+            warn(f"skipping subschema {c}, malformed json")
         else:
-            sub_id = sub["$id"]
-            schema_store[sub_id] = sub
+            cleanedup_subschema_data = remove_unsupported_regex_patterns(subschema_data)
+            subschema_uri = cleanedup_subschema_data["$id"]
+            subschema = Resource.from_contents(cleanedup_subschema_data)
+            resources.append((subschema_uri, subschema))
 
-    resolver = jsonschema.validators.RefResolver.from_schema(s, store=schema_store)
+    registry = Registry().with_resources(resources)
+    validator: Validator = Draft202012Validator(
+        cleanedup_schema_data,
+        registry=registry,
+    )
 
-    validator_cls = jsonschema.validators.validator_for(s)
-    validator_cls.check_schema(s)  # against META_SCHEMA
-    validator = validator_cls(s, resolver=resolver)
-
-    with open(instance_object, "r") as f:
+    with open(extension_yaml_path, "r") as f:
         file = yaml.compose(f)
 
-    def process_validation_error(error):
+    def process_validation_error(error: ValidationError):
         err_loc = backtrack_yaml_location(error.absolute_path, file)
 
         # TODO: add typo finder for some cases - like enum mismatch
@@ -77,4 +100,10 @@ def validate_schema(instance_object: Path, schema_entrypoint: Path, warn: Callab
             "cause": error.message
         }
 
-    return list(map(process_validation_error, validator.iter_errors(instance)))
+    detected_errors = list(validator.iter_errors(instance))
+    errors_info: list[dict] = []
+    for err in detected_errors:
+        error_info = process_validation_error(err)
+        errors_info.append(error_info)
+
+    return errors_info

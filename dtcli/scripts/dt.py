@@ -20,6 +20,7 @@ import platform
 import re
 import sys
 from pathlib import Path
+from pprint import pprint
 
 import click
 import requests  # noqa:I201
@@ -838,8 +839,9 @@ def delete(**kwargs):
 )
 def validate_schema(instance, **kwargs):
     errors = _validate_schema.validate_schema(
-        instance_object=instance, schema_entrypoint=kwargs["schema_entrypoint"],
-        warn=functools.partial(click.echo, err=True))
+        extension_yaml_path=instance, extension_schema_path=kwargs["schema_entrypoint"],
+        warn=functools.partial(click.echo, err=True),
+    )
     invalid = False
     if errors:
         invalid = True
@@ -847,7 +849,11 @@ def validate_schema(instance, **kwargs):
             print(f'{10 * "-"} error {i} {10 * "-"}', file=sys.stderr)
             print(f'line: {e["line"]}, column: {e["column"]}', file=sys.stderr)
             print(f'path: {e["path"]}', file=sys.stderr)
-            print(f'cause: {e["cause"]}', file=sys.stderr)
+            cause = e["cause"]
+            if isinstance(cause, dict):
+                pprint(f'cause: {cause}', stream=sys.stderr)
+            else:
+                print(f'cause: {e["cause"]}', file=sys.stderr)
     if invalid:
         print(f"{30 * '-'}", file=sys.stderr)
         raise click.ClickException(f"{i + 1} validation errors total, aborting!")
